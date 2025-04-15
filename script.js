@@ -56,6 +56,7 @@ window.onload = function () {
 
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     drawGrid(
       ctx,
       canvas.width / 2 + mult,
@@ -63,6 +64,7 @@ window.onload = function () {
       mult,
       size
     );
+
     ctx.fillStyle = "#f00";
     const dotSize = 10;
     ctx.fillRect(
@@ -71,9 +73,17 @@ window.onload = function () {
       dotSize,
       dotSize
     );
-    // drawTile(ctx, canvas.width / 2, canvas.height / 2);
-    // drawTile(ctx, canvas.width / 2 + 100, canvas.height / 2 - 50);
-    // drawTile(ctx, canvas.width / 2 + 200, canvas.height / 2 - 100);
+
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, canvas.height / 2 + mult);
+    ctx.lineTo(canvas.width / 2 - mult, canvas.height / 2 + mult / 2);
+    ctx.lineTo(canvas.width / 2 - mult, canvas.height / 2 - mult / 2);
+    ctx.lineTo(canvas.width / 2, canvas.height / 2 - mult);
+    ctx.lineTo(canvas.width / 2 + mult, canvas.height / 2 - mult / 2);
+    ctx.lineTo(canvas.width / 2 + mult, canvas.height / 2 + mult / 2);
+
+    ctx.closePath();
+    ctx.fill();
 
     requestAnimationFrame(render);
   }
