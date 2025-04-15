@@ -96,6 +96,11 @@ window.onload = function () {
   const cubes = [
     { x: canvas.width / 2, y: 0, z: canvas.height / 2 },
     { x: canvas.width / 2 + size, y: 0, z: canvas.height / 2 - size / 2 },
+    {
+      x: canvas.width / 2 + size,
+      y: 1,
+      z: canvas.height / 2 - (size * 3) / 2, // how to calc this? dx is awful
+    },
     { x: canvas.width / 2 - size, y: 0, z: canvas.height / 2 - size / 2 },
     { x: canvas.width / 2, y: 1, z: canvas.height / 2 - size },
   ];
