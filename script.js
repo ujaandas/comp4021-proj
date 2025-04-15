@@ -7,11 +7,11 @@ window.addEventListener("keydown", (e) => {
 
   if (e.key === "a") {
     camera.dir = camera.dir <= 1 ? 4 : camera.dir - 1;
-    console.log(camera.dir);
+    // console.log(camera.dir);
   }
   if (e.key === "d") {
     camera.dir = camera.dir >= 4 ? 1 : camera.dir + 1;
-    console.log(camera.dir);
+    // console.log(camera.dir);
   }
 });
 
@@ -83,6 +83,24 @@ function renderTestCube(ctx, w, h, size) {
   renderTestCubeT(ctx, w, h, size, "red");
 }
 
+function screen2Grid(x, y, z, size) {
+  // convert screen coordinates (x, y, z) into grid coordinates where:
+  // (canvas.width/2, 0, canvas.height/2) becomes (0, y, 0)
+  const gridX = Math.round((x - canvas.width / 2) / size);
+  const gridZ = Math.round((z - canvas.height / 2) / size);
+  const gridY = y; // remains unchanged
+  return { gridX, gridY, gridZ };
+}
+
+function rotateCube(cube, pivotX, pivotZ, dir, size) {
+  // if (cube.x === pivotX) {
+  //   return { ...cube };
+  // }
+  const { gridX, gridY, gridZ } = screen2Grid(cube.x, cube.y, cube.z, size);
+  console.log(`Translated xyz: ${gridX}, ${gridY}, ${gridZ}`);
+  return { ...cube };
+}
+
 window.onload = function () {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
@@ -113,66 +131,70 @@ window.onload = function () {
       dotSize
     );
 
+    const pivotX = canvas.width / 2;
+    const pivotZ = canvas.height / 2;
+
+    const angle = (camera.dir - 1) * (Math.PI / 2);
+
+    // console.log(angle);
+
     // include camera.dir in this calculation?
+    // todo: come up with new way to place cubes
+    // currently, must manually adjust z - sort of "cheating" to place block on top of another
+    // ideally, should set same x and z, and then append y
     const cubes = [
-      { x: canvas.width / 2, y: 0, z: canvas.height / 2 },
-      // { x: canvas.width / 2 + size, y: 0, z: canvas.height / 2 - size / 2 },
-      {
-        x: canvas.width / 2 + size,
-        y: 1,
-        z: canvas.height / 2 - (size * 3) / 2, // how to calc this? dx is awful
-      },
-      // {
-      //   x: canvas.width / 2 + size * 2,
-      //   y: 1,
-      //   z: canvas.height / 2 - size * 2, // how to calc this? dx is awful
-      // },
-      // { x: canvas.width / 2 - size, y: 0, z: canvas.height / 2 - size / 2 },
-      { x: canvas.width / 2, y: 1, z: canvas.height / 2 - size },
+      { x: canvas.width / 2, y: 1, z: canvas.height / 2 }, // block above origin
+      { x: canvas.width / 2, y: 0, z: canvas.height / 2 }, // origin block
+      { x: canvas.width / 2, y: 2, z: canvas.height / 2 }, // origin block
+      { x: canvas.width / 2 - size, y: 0, z: canvas.height / 2 - size / 2 }, // should be at grid(-1,-1)
+      { x: canvas.width / 2 + size, y: 0, z: canvas.height / 2 + size / 2 }, // should be at grid(-1,-1)
     ]; // hardcoded, akin to a level or stage snapshot (ie; middle of the game)
     // something like a "default" value, assumes default state as camera.dir == 1
+    console.log(`Unsorted cubes: ${cubes.map((cube) => JSON.stringify(cube))}`);
+
+    // for all cubes with same x and z, sort by y and in that order, append i * -size
+    cubes.sort((a, b) => {
+      // first sort by grid position: x then z.
+      if (a.x !== b.x) return a.x - b.x;
+      if (a.z !== b.z) return a.z - b.z;
+      // for cubes in the same grid cell, sort by y ascending.
+      return a.y - b.y;
+    });
+
+    console.log(`Sorted cubes: ${cubes.map((cube) => JSON.stringify(cube))}`);
+
+    // compute appropriate z values for stacked cubes
+    let lastGridKey = "";
+    let stackIndex = 0;
+
+    cubes.forEach((cube, i) => {
+      // create key for curr cell based on x, z
+      const currentKey = `${cube.x}_${cube.z}`;
+
+      // if new grid reset stack
+      if (currentKey !== lastGridKey) {
+        stackIndex = 0;
+        lastGridKey = currentKey;
+      } else {
+        // increment counter same stack cubes
+        stackIndex++;
+      }
+
+      // adjust cube z based on stack order
+      // first cube in the cell keeps its original z
+      // next  is pushed back by size, etc.
+      cube.z += stackIndex * -size;
+    });
 
     // spin everything about the origin, ie; move everything where x and z are both == canvas.width/height / 2, respectively
-    cubes
-      .filter((cube) => cube.x != canvas.width / 2)
-      .map((cube) => {
-        switch (camera.dir) {
-          case 1:
-            break;
-          case 2:
-            if (cube.x > canvas.width / 2) {
-              cube.z += size;
-            } else {
-              cube.x += size;
-            }
-            break;
-          case 3:
-            if (cube.x > canvas.width / 2) {
-              cube.z += size;
-              cube.x -= size * 2;
-            } else {
-              cube.x += size * 2;
-              cube.z += size;
-            }
-            break;
-          case 4:
-            if (cube.x > canvas.width / 2) {
-              cube.x -= size * 2;
-            } else {
-              cube.z += size;
-            }
-            break;
-        }
-      });
+    // const rotatedCubes = cubes.map((cube) => {
+    //   return rotateCube(cube, pivotX, pivotZ, camera.dir, size);
+    // });
 
-    // painter's algo, sort by depth based on camera.dir
-    // y (height) takes precedence over z (depth)
-    cubes.sort((a, b) => (a.y == b.y ? a.z - b.z : a.y - b.y)); // -ve means b, a
-    // complexity arrives ^^, must dynamically reorder based on camera.dir
-
-    for (let i = 0; i < cubes.length; i++) {
-      renderTestCube(ctx, cubes[i].x, cubes[i].z, size);
-    }
+    // rotatedCubes.sort((a, b) => (a.y === b.y ? a.z - b.z : a.y - b.y));
+    cubes.forEach((cube) => {
+      renderTestCube(ctx, cube.x, cube.z, size);
+    });
 
     requestAnimationFrame(render);
   }
