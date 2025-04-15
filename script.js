@@ -93,18 +93,6 @@ window.onload = function () {
   const size = 100;
   const scale = size / 2;
 
-  const cubes = [
-    { x: canvas.width / 2, y: 0, z: canvas.height / 2 },
-    { x: canvas.width / 2 + size, y: 0, z: canvas.height / 2 - size / 2 },
-    {
-      x: canvas.width / 2 + size,
-      y: 1,
-      z: canvas.height / 2 - (size * 3) / 2, // how to calc this? dx is awful
-    },
-    { x: canvas.width / 2 - size, y: 0, z: canvas.height / 2 - size / 2 },
-    { x: canvas.width / 2, y: 1, z: canvas.height / 2 - size },
-  ];
-
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -125,9 +113,62 @@ window.onload = function () {
       dotSize
     );
 
+    // include camera.dir in this calculation?
+    const cubes = [
+      { x: canvas.width / 2, y: 0, z: canvas.height / 2 },
+      // { x: canvas.width / 2 + size, y: 0, z: canvas.height / 2 - size / 2 },
+      {
+        x: canvas.width / 2 + size,
+        y: 1,
+        z: canvas.height / 2 - (size * 3) / 2, // how to calc this? dx is awful
+      },
+      // {
+      //   x: canvas.width / 2 + size * 2,
+      //   y: 1,
+      //   z: canvas.height / 2 - size * 2, // how to calc this? dx is awful
+      // },
+      // { x: canvas.width / 2 - size, y: 0, z: canvas.height / 2 - size / 2 },
+      { x: canvas.width / 2, y: 1, z: canvas.height / 2 - size },
+    ]; // hardcoded, akin to a level or stage snapshot (ie; middle of the game)
+    // something like a "default" value, assumes default state as camera.dir == 1
+
+    // spin everything about the origin, ie; move everything where x and z are both == canvas.width/height / 2, respectively
+    cubes
+      .filter((cube) => cube.x != canvas.width / 2)
+      .map((cube) => {
+        switch (camera.dir) {
+          case 1:
+            break;
+          case 2:
+            if (cube.x > canvas.width / 2) {
+              cube.z += size;
+            } else {
+              cube.x += size;
+            }
+            break;
+          case 3:
+            if (cube.x > canvas.width / 2) {
+              cube.z += size;
+              cube.x -= size * 2;
+            } else {
+              cube.x += size * 2;
+              cube.z += size;
+            }
+            break;
+          case 4:
+            if (cube.x > canvas.width / 2) {
+              cube.x -= size * 2;
+            } else {
+              cube.z += size;
+            }
+            break;
+        }
+      });
+
     // painter's algo, sort by depth based on camera.dir
     // y (height) takes precedence over z (depth)
     cubes.sort((a, b) => (a.y == b.y ? a.z - b.z : a.y - b.y)); // -ve means b, a
+    // complexity arrives ^^, must dynamically reorder based on camera.dir
 
     for (let i = 0; i < cubes.length; i++) {
       renderTestCube(ctx, cubes[i].x, cubes[i].z, size);
