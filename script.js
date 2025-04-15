@@ -44,6 +44,39 @@ function drawGrid(ctx, posX, posY, mult, size) {
   }
 }
 
+function renderTestCubeL(ctx, w, h, mult, col) {
+  ctx.beginPath();
+  ctx.moveTo(w / 2, h / 2 + mult);
+  ctx.lineTo(w / 2 - mult, h / 2 + mult / 2);
+  ctx.lineTo(w / 2 - mult, h / 2 - mult / 2);
+  ctx.lineTo(w / 2, h / 2);
+  ctx.closePath();
+  ctx.fillStyle = col;
+  ctx.fill();
+}
+
+function renderTestCubeR(ctx, w, h, mult, col) {
+  ctx.beginPath();
+  ctx.moveTo(w / 2, h / 2 + mult);
+  ctx.lineTo(w / 2 + mult, h / 2 + mult / 2);
+  ctx.lineTo(w / 2 + mult, h / 2 - mult / 2);
+  ctx.lineTo(w / 2, h / 2);
+  ctx.closePath();
+  ctx.fillStyle = col;
+  ctx.fill();
+}
+
+function renderTestCubeT(ctx, w, h, mult, col) {
+  ctx.beginPath();
+  ctx.moveTo(w / 2, h / 2);
+  ctx.lineTo(w / 2 - mult, h / 2 - mult / 2);
+  ctx.lineTo(w / 2, h / 2 - mult);
+  ctx.lineTo(w / 2 + mult, h / 2 - mult / 2);
+  ctx.closePath();
+  ctx.fillStyle = col;
+  ctx.fill();
+}
+
 window.onload = function () {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
@@ -74,32 +107,28 @@ window.onload = function () {
       dotSize
     );
 
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, canvas.height / 2 + mult);
-    ctx.lineTo(canvas.width / 2 - mult, canvas.height / 2 + mult / 2);
-    ctx.lineTo(canvas.width / 2 - mult, canvas.height / 2 - mult / 2);
-    ctx.lineTo(canvas.width / 2, canvas.height / 2);
-    ctx.closePath();
-    ctx.fillStyle = "red";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, canvas.height / 2 + mult);
-    ctx.lineTo(canvas.width / 2 + mult, canvas.height / 2 + mult / 2);
-    ctx.lineTo(canvas.width / 2 + mult, canvas.height / 2 - mult / 2);
-    ctx.lineTo(canvas.width / 2, canvas.height / 2);
-    ctx.closePath();
-    ctx.fillStyle = "green";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, canvas.height / 2);
-    ctx.lineTo(canvas.width / 2 - mult, canvas.height / 2 - mult / 2);
-    ctx.lineTo(canvas.width / 2, canvas.height / 2 - mult);
-    ctx.lineTo(canvas.width / 2 + mult, canvas.height / 2 - mult / 2);
-    ctx.closePath();
-    ctx.fillStyle = "blue";
-    ctx.fill();
+    switch (camera.dir) {
+      case 1:
+        renderTestCubeL(ctx, canvas.width, canvas.height, mult, "red");
+        renderTestCubeR(ctx, canvas.width, canvas.height, mult, "green");
+        renderTestCubeT(ctx, canvas.width, canvas.height, mult, "blue");
+        break;
+      case 2:
+        renderTestCubeL(ctx, canvas.width, canvas.height, mult, "yellow");
+        renderTestCubeR(ctx, canvas.width, canvas.height, mult, "red");
+        renderTestCubeT(ctx, canvas.width, canvas.height, mult, "blue");
+        break;
+      case 3:
+        renderTestCubeL(ctx, canvas.width, canvas.height, mult, "orange");
+        renderTestCubeR(ctx, canvas.width, canvas.height, mult, "yellow");
+        renderTestCubeT(ctx, canvas.width, canvas.height, mult, "blue");
+        break;
+      case 4:
+        renderTestCubeL(ctx, canvas.width, canvas.height, mult, "green");
+        renderTestCubeR(ctx, canvas.width, canvas.height, mult, "orange");
+        renderTestCubeT(ctx, canvas.width, canvas.height, mult, "blue");
+        break;
+    }
 
     requestAnimationFrame(render);
   }
