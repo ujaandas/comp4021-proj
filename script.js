@@ -29,58 +29,58 @@ function drawTile(ctx, posX, posY, size) {
   ctx.stroke();
 }
 
-function drawGrid(ctx, posX, posY, mult, size) {
-  for (let i = -size / 2; i < size / 2; i++) {
-    for (let j = -size / 2; j < size / 2; j++) {
-      const rowShift = mult * i;
-      const colShift = (mult * i) / 2;
+function drawGrid(ctx, posX, posY, size, scale) {
+  for (let i = -scale / 2; i < scale / 2; i++) {
+    for (let j = -scale / 2; j < scale / 2; j++) {
+      const rowShift = size * i;
+      const colShift = (size * i) / 2;
       drawTile(
         ctx,
-        posX + mult * j + rowShift,
-        posY - (mult * j) / 2 + colShift,
-        mult
+        posX + size * j + rowShift,
+        posY - (size * j) / 2 + colShift,
+        size
       );
     }
   }
 }
 
-function renderTestCubeL(ctx, w, h, mult, col) {
+function renderTestCubeL(ctx, w, h, size, col) {
   ctx.beginPath();
-  ctx.moveTo(w, h + mult);
-  ctx.lineTo(w - mult, h + mult / 2);
-  ctx.lineTo(w - mult, h - mult / 2);
+  ctx.moveTo(w, h + size);
+  ctx.lineTo(w - size, h + size / 2);
+  ctx.lineTo(w - size, h - size / 2);
   ctx.lineTo(w, h);
   ctx.closePath();
   ctx.fillStyle = col;
   ctx.fill();
 }
 
-function renderTestCubeR(ctx, w, h, mult, col) {
+function renderTestCubeR(ctx, w, h, size, col) {
   ctx.beginPath();
-  ctx.moveTo(w, h + mult);
-  ctx.lineTo(w + mult, h + mult / 2);
-  ctx.lineTo(w + mult, h - mult / 2);
+  ctx.moveTo(w, h + size);
+  ctx.lineTo(w + size, h + size / 2);
+  ctx.lineTo(w + size, h - size / 2);
   ctx.lineTo(w, h);
   ctx.closePath();
   ctx.fillStyle = col;
   ctx.fill();
 }
 
-function renderTestCubeT(ctx, w, h, mult, col) {
+function renderTestCubeT(ctx, w, h, size, col) {
   ctx.beginPath();
   ctx.moveTo(w, h);
-  ctx.lineTo(w - mult, h - mult / 2);
-  ctx.lineTo(w, h - mult);
-  ctx.lineTo(w + mult, h - mult / 2);
+  ctx.lineTo(w - size, h - size / 2);
+  ctx.lineTo(w, h - size);
+  ctx.lineTo(w + size, h - size / 2);
   ctx.closePath();
   ctx.fillStyle = col;
   ctx.fill();
 }
 
-function renderTestCube(ctx, w, h, mult) {
-  renderTestCubeL(ctx, w, h, mult, "darkred");
-  renderTestCubeR(ctx, w, h, mult, "crimson");
-  renderTestCubeT(ctx, w, h, mult, "red");
+function renderTestCube(ctx, w, h, size) {
+  renderTestCubeL(ctx, w, h, size, "darkred");
+  renderTestCubeR(ctx, w, h, size, "crimson");
+  renderTestCubeT(ctx, w, h, size, "red");
 }
 
 window.onload = function () {
@@ -90,18 +90,25 @@ window.onload = function () {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  const mult = 100;
-  const size = mult / 2;
+  const size = 100;
+  const scale = size / 2;
+
+  const cubes = [
+    { x: canvas.width / 2, y: canvas.height / 2 },
+    { x: canvas.width / 2 + size, y: canvas.height / 2 - size / 2 },
+    { x: canvas.width / 2 - size, y: canvas.height / 2 - size / 2 },
+    { x: canvas.width / 2, y: canvas.height / 2 - size },
+  ];
 
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     drawGrid(
       ctx,
-      canvas.width / 2 + mult,
-      canvas.height / 2 - mult / 2,
-      mult,
-      size
+      canvas.width / 2 + size,
+      canvas.height / 2 - size / 2,
+      size,
+      scale
     );
 
     ctx.fillStyle = "#f00";
@@ -113,44 +120,51 @@ window.onload = function () {
       dotSize
     );
 
-    switch (camera.dir) {
-      case 1:
-        renderTestCube(
-          ctx,
-          canvas.width / 2 + mult,
-          canvas.height / 2 - mult / 2,
-          mult
-        );
-        renderTestCube(ctx, canvas.width / 2, canvas.height / 2, mult);
-        break;
-      case 2:
-        renderTestCube(
-          ctx,
-          canvas.width / 2 - mult,
-          canvas.height / 2 - mult / 2,
-          mult
-        );
-        renderTestCube(ctx, canvas.width / 2, canvas.height / 2, mult);
-        break;
-      case 3:
-        renderTestCube(ctx, canvas.width / 2, canvas.height / 2, mult);
-        renderTestCube(
-          ctx,
-          canvas.width / 2 - mult,
-          canvas.height / 2 + mult / 2,
-          mult
-        );
-        break;
-      case 4:
-        renderTestCube(ctx, canvas.width / 2, canvas.height / 2, mult);
-        renderTestCube(
-          ctx,
-          canvas.width / 2 + mult,
-          canvas.height / 2 + mult / 2,
-          mult
-        );
-        break;
+    // painter's algo, sort by depth based on camera.dir
+    cubes.sort((a, b) => a.y - b.y); // -ve means b, a
+
+    for (let i = 0; i < cubes.length; i++) {
+      renderTestCube(ctx, cubes[i].x, cubes[i].y, size);
     }
+
+    // switch (camera.dir) {
+    //   case 1:
+    //     renderTestCube(
+    //       ctx,
+    //       canvas.width / 2 + size,
+    //       canvas.height / 2 - size / 2,
+    //       size
+    //     );
+    //     renderTestCube(ctx, canvas.width / 2, canvas.height / 2, size);
+    //     break;
+    //   case 2:
+    //     renderTestCube(
+    //       ctx,
+    //       canvas.width / 2 - size,
+    //       canvas.height / 2 - size / 2,
+    //       size
+    //     );
+    //     renderTestCube(ctx, canvas.width / 2, canvas.height / 2, size);
+    //     break;
+    //   case 3:
+    //     renderTestCube(ctx, canvas.width / 2, canvas.height / 2, size);
+    //     renderTestCube(
+    //       ctx,
+    //       canvas.width / 2 - size,
+    //       canvas.height / 2 + size / 2,
+    //       size
+    //     );
+    //     break;
+    //   case 4:
+    //     renderTestCube(ctx, canvas.width / 2, canvas.height / 2, size);
+    //     renderTestCube(
+    //       ctx,
+    //       canvas.width / 2 + size,
+    //       canvas.height / 2 + size / 2,
+    //       size
+    //     );
+    //     break;
+    // }
 
     requestAnimationFrame(render);
   }
