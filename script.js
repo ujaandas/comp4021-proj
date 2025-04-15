@@ -94,10 +94,10 @@ window.onload = function () {
   const scale = size / 2;
 
   const cubes = [
-    { x: canvas.width / 2, y: canvas.height / 2 },
-    { x: canvas.width / 2 + size, y: canvas.height / 2 - size / 2 },
-    { x: canvas.width / 2 - size, y: canvas.height / 2 - size / 2 },
-    { x: canvas.width / 2, y: canvas.height / 2 - size },
+    { x: canvas.width / 2, y: 0, z: canvas.height / 2 },
+    { x: canvas.width / 2 + size, y: 0, z: canvas.height / 2 - size / 2 },
+    { x: canvas.width / 2 - size, y: 0, z: canvas.height / 2 - size / 2 },
+    { x: canvas.width / 2, y: 1, z: canvas.height / 2 - size },
   ];
 
   function render() {
@@ -121,50 +121,12 @@ window.onload = function () {
     );
 
     // painter's algo, sort by depth based on camera.dir
-    cubes.sort((a, b) => a.y - b.y); // -ve means b, a
+    // y (height) takes precedence over z (depth)
+    cubes.sort((a, b) => (a.y == b.y ? a.z - b.z : a.y - b.y)); // -ve means b, a
 
     for (let i = 0; i < cubes.length; i++) {
-      renderTestCube(ctx, cubes[i].x, cubes[i].y, size);
+      renderTestCube(ctx, cubes[i].x, cubes[i].z, size);
     }
-
-    // switch (camera.dir) {
-    //   case 1:
-    //     renderTestCube(
-    //       ctx,
-    //       canvas.width / 2 + size,
-    //       canvas.height / 2 - size / 2,
-    //       size
-    //     );
-    //     renderTestCube(ctx, canvas.width / 2, canvas.height / 2, size);
-    //     break;
-    //   case 2:
-    //     renderTestCube(
-    //       ctx,
-    //       canvas.width / 2 - size,
-    //       canvas.height / 2 - size / 2,
-    //       size
-    //     );
-    //     renderTestCube(ctx, canvas.width / 2, canvas.height / 2, size);
-    //     break;
-    //   case 3:
-    //     renderTestCube(ctx, canvas.width / 2, canvas.height / 2, size);
-    //     renderTestCube(
-    //       ctx,
-    //       canvas.width / 2 - size,
-    //       canvas.height / 2 + size / 2,
-    //       size
-    //     );
-    //     break;
-    //   case 4:
-    //     renderTestCube(ctx, canvas.width / 2, canvas.height / 2, size);
-    //     renderTestCube(
-    //       ctx,
-    //       canvas.width / 2 + size,
-    //       canvas.height / 2 + size / 2,
-    //       size
-    //     );
-    //     break;
-    // }
 
     requestAnimationFrame(render);
   }
