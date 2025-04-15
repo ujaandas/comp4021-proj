@@ -78,11 +78,27 @@ window.onload = function () {
     ctx.moveTo(canvas.width / 2, canvas.height / 2 + mult);
     ctx.lineTo(canvas.width / 2 - mult, canvas.height / 2 + mult / 2);
     ctx.lineTo(canvas.width / 2 - mult, canvas.height / 2 - mult / 2);
+    ctx.lineTo(canvas.width / 2, canvas.height / 2);
+    ctx.closePath();
+    ctx.fillStyle = "red";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, canvas.height / 2 + mult);
+    ctx.lineTo(canvas.width / 2 + mult, canvas.height / 2 + mult / 2);
+    ctx.lineTo(canvas.width / 2 + mult, canvas.height / 2 - mult / 2);
+    ctx.lineTo(canvas.width / 2, canvas.height / 2);
+    ctx.closePath();
+    ctx.fillStyle = "green";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, canvas.height / 2);
+    ctx.lineTo(canvas.width / 2 - mult, canvas.height / 2 - mult / 2);
     ctx.lineTo(canvas.width / 2, canvas.height / 2 - mult);
     ctx.lineTo(canvas.width / 2 + mult, canvas.height / 2 - mult / 2);
-    ctx.lineTo(canvas.width / 2 + mult, canvas.height / 2 + mult / 2);
-
     ctx.closePath();
+    ctx.fillStyle = "blue";
     ctx.fill();
 
     requestAnimationFrame(render);
