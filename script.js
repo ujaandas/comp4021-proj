@@ -46,10 +46,10 @@ function drawGrid(ctx, posX, posY, mult, size) {
 
 function renderTestCubeL(ctx, w, h, mult, col) {
   ctx.beginPath();
-  ctx.moveTo(w / 2, h / 2 + mult);
-  ctx.lineTo(w / 2 - mult, h / 2 + mult / 2);
-  ctx.lineTo(w / 2 - mult, h / 2 - mult / 2);
-  ctx.lineTo(w / 2, h / 2);
+  ctx.moveTo(w, h + mult);
+  ctx.lineTo(w - mult, h + mult / 2);
+  ctx.lineTo(w - mult, h - mult / 2);
+  ctx.lineTo(w, h);
   ctx.closePath();
   ctx.fillStyle = col;
   ctx.fill();
@@ -57,10 +57,10 @@ function renderTestCubeL(ctx, w, h, mult, col) {
 
 function renderTestCubeR(ctx, w, h, mult, col) {
   ctx.beginPath();
-  ctx.moveTo(w / 2, h / 2 + mult);
-  ctx.lineTo(w / 2 + mult, h / 2 + mult / 2);
-  ctx.lineTo(w / 2 + mult, h / 2 - mult / 2);
-  ctx.lineTo(w / 2, h / 2);
+  ctx.moveTo(w, h + mult);
+  ctx.lineTo(w + mult, h + mult / 2);
+  ctx.lineTo(w + mult, h - mult / 2);
+  ctx.lineTo(w, h);
   ctx.closePath();
   ctx.fillStyle = col;
   ctx.fill();
@@ -68,13 +68,19 @@ function renderTestCubeR(ctx, w, h, mult, col) {
 
 function renderTestCubeT(ctx, w, h, mult, col) {
   ctx.beginPath();
-  ctx.moveTo(w / 2, h / 2);
-  ctx.lineTo(w / 2 - mult, h / 2 - mult / 2);
-  ctx.lineTo(w / 2, h / 2 - mult);
-  ctx.lineTo(w / 2 + mult, h / 2 - mult / 2);
+  ctx.moveTo(w, h);
+  ctx.lineTo(w - mult, h - mult / 2);
+  ctx.lineTo(w, h - mult);
+  ctx.lineTo(w + mult, h - mult / 2);
   ctx.closePath();
   ctx.fillStyle = col;
   ctx.fill();
+}
+
+function renderTestCube(ctx, w, h, mult) {
+  renderTestCubeL(ctx, w, h, mult, "darkred");
+  renderTestCubeR(ctx, w, h, mult, "crimson");
+  renderTestCubeT(ctx, w, h, mult, "red");
 }
 
 window.onload = function () {
@@ -109,24 +115,40 @@ window.onload = function () {
 
     switch (camera.dir) {
       case 1:
-        renderTestCubeL(ctx, canvas.width, canvas.height, mult, "red");
-        renderTestCubeR(ctx, canvas.width, canvas.height, mult, "green");
-        renderTestCubeT(ctx, canvas.width, canvas.height, mult, "blue");
+        renderTestCube(
+          ctx,
+          canvas.width / 2 + mult,
+          canvas.height / 2 - mult / 2,
+          mult
+        );
+        renderTestCube(ctx, canvas.width / 2, canvas.height / 2, mult);
         break;
       case 2:
-        renderTestCubeL(ctx, canvas.width, canvas.height, mult, "yellow");
-        renderTestCubeR(ctx, canvas.width, canvas.height, mult, "red");
-        renderTestCubeT(ctx, canvas.width, canvas.height, mult, "blue");
+        renderTestCube(
+          ctx,
+          canvas.width / 2 - mult,
+          canvas.height / 2 - mult / 2,
+          mult
+        );
+        renderTestCube(ctx, canvas.width / 2, canvas.height / 2, mult);
         break;
       case 3:
-        renderTestCubeL(ctx, canvas.width, canvas.height, mult, "orange");
-        renderTestCubeR(ctx, canvas.width, canvas.height, mult, "yellow");
-        renderTestCubeT(ctx, canvas.width, canvas.height, mult, "blue");
+        renderTestCube(ctx, canvas.width / 2, canvas.height / 2, mult);
+        renderTestCube(
+          ctx,
+          canvas.width / 2 - mult,
+          canvas.height / 2 + mult / 2,
+          mult
+        );
         break;
       case 4:
-        renderTestCubeL(ctx, canvas.width, canvas.height, mult, "green");
-        renderTestCubeR(ctx, canvas.width, canvas.height, mult, "orange");
-        renderTestCubeT(ctx, canvas.width, canvas.height, mult, "blue");
+        renderTestCube(ctx, canvas.width / 2, canvas.height / 2, mult);
+        renderTestCube(
+          ctx,
+          canvas.width / 2 + mult,
+          canvas.height / 2 + mult / 2,
+          mult
+        );
         break;
     }
 
