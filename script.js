@@ -2,6 +2,27 @@ let camera = {
   // dir: 1,
 };
 
+const blocks = [
+  {
+    color: "rgba(255,0,0,0.8)",
+    cells: [
+      { i: 2, j: 2, k: 0 },
+      { i: 3, j: 2, k: 0 },
+      { i: 2, j: 3, k: 0 },
+      { i: 3, j: 3, k: 0 },
+    ],
+  },
+  {
+    color: "rgba(0,0,255,0.8)",
+    cells: [
+      { i: 5, j: 5, k: 0 },
+      { i: 6, j: 5, k: 0 },
+      { i: 7, j: 5, k: 0 },
+      { i: 7, j: 6, k: 0 },
+    ],
+  },
+];
+
 window.addEventListener("keydown", (e) => {
   if (e.repeat) return;
 
@@ -51,6 +72,22 @@ window.onload = function () {
         ctx.stroke();
       }
     }
+
+    blocks.forEach((block) => {
+      ctx.fillStyle = block.color;
+      ctx.strokeStyle = "black";
+      block.cells.forEach((cell) => {
+        const pos = gridToScreen(cell.i, cell.j, cell.k);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        ctx.lineTo(pos.x + tileWidth / 2, pos.y + tileHeight / 2);
+        ctx.lineTo(pos.x, pos.y + tileHeight);
+        ctx.lineTo(pos.x - tileWidth / 2, pos.y + tileHeight / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      });
+    });
 
     requestAnimationFrame(render);
   }
