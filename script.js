@@ -1,5 +1,5 @@
 let camera = {
-  // dir: 1,
+  angle: 0,
 };
 
 const blocks = [
@@ -24,15 +24,19 @@ const blocks = [
   // },
 ];
 
+const kShift = -3;
+
 window.addEventListener("keydown", (e) => {
   if (e.repeat) return;
 
-  // if (e.key === "a") {
-  //   camera.dir = camera.dir <= 1 ? 4 : camera.dir - 1;
-  // }
-  // if (e.key === "d") {
-  //   camera.dir = camera.dir >= 4 ? 1 : camera.dir + 1;
-  // }
+  if (e.key === "ArrowLeft") {
+    camera.angle -= 10;
+  }
+  if (e.key === "ArrowRight") {
+    camera.angle += 10;
+  }
+
+  camera.angle = (camera.angle + 360) % 360;
 });
 
 window.onload = function () {
@@ -45,15 +49,42 @@ window.onload = function () {
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const gridSize = 20;
+    const gridSize = 9;
     const tileWidth = 100;
     const tileHeight = tileWidth / 2;
     const originX = canvas.width / 2;
     const originY = 60;
 
+    const angleInRadians = (camera.angle * Math.PI) / 180;
+
+    // function rotatePoint(x, y) {
+    //   const rotatedX =
+    //     x * Math.cos(angleInRadians) - y * Math.sin(angleInRadians);
+    //   const rotatedY =
+    //     x * Math.sin(angleInRadians) + y * Math.cos(angleInRadians);
+    //   return { x: rotatedX, y: rotatedY };
+    // }
+
+    /*
     function gridToScreen(i, j, k = 0) {
       let screenX = ((i - j) * tileWidth) / 2;
       let screenY = ((i + j) * tileHeight) / 2 - k * tileHeight;
+      return {
+        x: originX + screenX,
+        y: originY + screenY,
+      };
+    }
+    */
+
+    function gridToScreen(i, j, k = 0) {
+      const rotatedI =
+        i * Math.cos(angleInRadians) - j * Math.sin(angleInRadians);
+      const rotatedJ =
+        i * Math.sin(angleInRadians) + j * Math.cos(angleInRadians);
+
+      let screenX = ((rotatedI - rotatedJ) * tileWidth) / 2;
+      let screenY =
+        ((rotatedI + rotatedJ) * tileHeight) / 2 - (k + kShift) * tileHeight;
       return {
         x: originX + screenX,
         y: originY + screenY,
@@ -109,7 +140,6 @@ window.onload = function () {
         cellGroup.sort((a, b) => a.k - b.k);
       });
 
-      // Render cells:
       Object.values(cellsByPos).forEach((cellGroup) => {
         cellGroup.forEach((cell, index) => {
           const { i, j, k } = cell;
