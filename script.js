@@ -10,7 +10,6 @@ const blocks = [
       { i: 2, j: 3, k: 0 },
       { i: 2, j: 3, k: 1 },
       { i: 3, j: 2, k: 0 },
-      // { i: 2, j: 3, k: 2 },
     ],
   },
   // {
@@ -41,10 +40,26 @@ window.addEventListener("keydown", (e) => {
 
   if (activeBlock) {
     const key = e.key.toLowerCase();
-    if (key === "a") activeBlock.cells.forEach((cell) => cell.i--);
-    if (key === "d") activeBlock.cells.forEach((cell) => cell.i++);
-    if (key === "w") activeBlock.cells.forEach((cell) => cell.j--);
-    if (key === "s") activeBlock.cells.forEach((cell) => cell.j++);
+    if (key === "a")
+      activeBlock.cells.forEach((cell) => {
+        cell.i--;
+        cell.j++;
+      });
+    if (key === "d")
+      activeBlock.cells.forEach((cell) => {
+        cell.i++;
+        cell.j--;
+      });
+    if (key === "w")
+      activeBlock.cells.forEach((cell) => {
+        cell.i--;
+        cell.j--;
+      });
+    if (key === "s")
+      activeBlock.cells.forEach((cell) => {
+        cell.i++;
+        cell.j++;
+      });
   }
 
   camera.angle = (camera.angle + 360) % 360;
