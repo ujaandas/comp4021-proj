@@ -27,7 +27,7 @@ const blocks = [
 const kShift = -3;
 let activeBlockIndex = 0;
 let activeBlock = blocks[activeBlockIndex];
-const fallSpeed = 0.1;
+const fallSpeed = 1000;
 
 window.addEventListener("keydown", (e) => {
   if (e.repeat) return;
@@ -40,10 +40,11 @@ window.addEventListener("keydown", (e) => {
   }
 
   if (activeBlock) {
-    if (e.key === "a") activeBlock.base.i--;
-    if (e.key === "d") activeBlock.base.i++;
-    if (e.key === "w") activeBlock.base.j--;
-    if (e.key === "s") activeBlock.base.j++;
+    const key = e.key.toLowerCase();
+    if (key === "a") activeBlock.cells.forEach((cell) => cell.i--);
+    if (key === "d") activeBlock.cells.forEach((cell) => cell.i++);
+    if (key === "w") activeBlock.cells.forEach((cell) => cell.j--);
+    if (key === "s") activeBlock.cells.forEach((cell) => cell.j++);
   }
 
   camera.angle = (camera.angle + 360) % 360;
@@ -181,17 +182,18 @@ window.onload = function () {
       })
       .forEach((block) => drawBlock(block));
 
-    if (activeBlock) {
-      activeBlock.cells.forEach((cell) => (cell.k -= fallSpeed));
-      const minK = Math.min(...activeBlock.cells.map((cell) => cell.k));
+    requestAnimationFrame(render);
+  }
+  render();
 
+  setInterval(() => {
+    if (activeBlock) {
+      activeBlock.cells.forEach((cell) => cell.k--);
+      const minK = Math.min(...activeBlock.cells.map((cell) => cell.k));
       if (minK <= -3) {
         activeBlockIndex++;
         activeBlock = blocks[activeBlockIndex] || null;
       }
     }
-
-    requestAnimationFrame(render);
-  }
-  render();
+  }, fallSpeed);
 };
