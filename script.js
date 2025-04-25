@@ -2,14 +2,16 @@ let camera = {
   angle: 0,
 };
 
+const initalK = 6;
+
 const blocks = [
   {
     color: "rgba(255,0,0,0.8)",
     cells: [
-      { i: 2, j: 2, k: 0 },
-      { i: 2, j: 3, k: 0 },
-      { i: 2, j: 3, k: 1 },
-      { i: 3, j: 2, k: 0 },
+      { i: 2, j: 2, k: initalK },
+      { i: 2, j: 3, k: initalK },
+      { i: 2, j: 3, k: initalK + 1 },
+      { i: 3, j: 2, k: initalK },
     ],
   },
   // {
@@ -205,7 +207,7 @@ window.onload = function () {
     if (activeBlock) {
       activeBlock.cells.forEach((cell) => cell.k--);
       const minK = Math.min(...activeBlock.cells.map((cell) => cell.k));
-      if (minK <= -3) {
+      if (minK <= initalK + kShift * 2) {
         activeBlockIndex++;
         activeBlock = blocks[activeBlockIndex] || null;
       }
