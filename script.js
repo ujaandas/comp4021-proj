@@ -15,7 +15,7 @@ const blocks = [
     },
 ];
 
-const tileset = new Tileset(5, 5);
+const tileset = new Tileset(5, 5, 100);
 console.log(tileset);
 
 
