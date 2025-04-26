@@ -54,9 +54,11 @@ class Tileset {
             if (!this.adj.has(nCoord.key)) continue;
 
             const wall = new Wall(coord, nCoord);
+            const wallR = new Wall(nCoord, coord);
             
-            // graph is DIRECTED now, feels more sensible? better vibes ig 
             this.adj.get(coord.key).push(wall);
+            this.adj.get(nCoord.key).push(wallR);
+
             console.log(`Added edge between (${i}, ${j}) and (${ni}, ${nj})`);
         }
 
@@ -65,7 +67,9 @@ class Tileset {
     // given a tile coordinate (ie; (2,2)), return the indices of neighbors with valid, drawable walls
     // tileset class should NEVER deal with screen coordinates, only tileset (ie; i, j) domain
     getDrawableWalls(i, j) {
-
+        const tCoord = new Coordinate(i, j);
+        const walls = this.adj.get(tCoord.key) || [];
+        return walls.filter(wall => !wall.drawn);
     }
 }
 
