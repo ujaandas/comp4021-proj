@@ -31,10 +31,6 @@ class Tileset {
         }
     }
 
-    _getKey(i, j) {
-        return `${i},${j}`;
-    }
-
     _addPt(i, j) {
         const coord = new Coordinate(i, j);
         if (this.adj.has(coord.key)) throw new Error("Coordinate already exists!");
@@ -64,11 +60,27 @@ class Tileset {
 
     }
 
+    drawWall(a, b) {
+        const keyA = `${i1},${j1}`;
+        const keyB = `${i2},${j2}`;
+
+        if (this.adj.has(keyA)) {
+            const walls = this.adj.get(keyA);
+            for (const wall of walls) { // todo: bfs/dfs
+                if ((wall.coordA.key === keyA && wall.coordB.key === keyB) || 
+                    (wall.coordA.key === keyB && wall.coordB.key === keyA)) {
+                    wall.drawn = true;
+                    return; 
+                }
+            }
+        }
+    }
+
     // given a tile coordinate (ie; (2,2)), return the indices of neighbors with valid, drawable walls
     // tileset class should NEVER deal with screen coordinates, only tileset (ie; i, j) domain
     getDrawableWalls(i, j) {
-        const tCoord = new Coordinate(i, j);
-        const walls = this.adj.get(tCoord.key) || [];
+        const cellKey = `${i},${j}`;
+        const walls = this.adj.get(cellKey) || [];
         return walls.filter(wall => !wall.drawn);
     }
 }

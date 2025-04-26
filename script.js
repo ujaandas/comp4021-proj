@@ -15,7 +15,7 @@ const blocks = [
     },
 ];
 
-const tileset = new Tileset(5, 5, 100);
+const tileset = new Tileset(9, 9, 100);
 console.log(tileset);
 
 
@@ -128,45 +128,21 @@ window.onload = function () {
             ctx.fill();
         }
 
-        function getCellWallVert(i, j, k, col, flipped = false) {
-            const { x, y } = gridToScreen(i, j, k);
-            const offset = flipped ? tileWidth / 2 : -tileWidth / 2;
-            const a = { x: x + offset, y: y - tileHeight / 2 };
-            const b = { x: x + offset, y: y + tileHeight / 2 };
-            return { a, b }
+        function paintWallBetween(i1, j1, k1, i2, j2, k2) {
+            const { x: x1, y: y1 } = gridToScreen(i1, j1, k1);
+            const { x: x2, y: y2 } = gridToScreen(i2, j2, k2);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x1, y1 + tileHeight);
+            ctx.lineTo(x2, y2 + tileHeight);
+            ctx.lineTo(x2, y2);
+            ctx.closePath();
+            ctx.fillStyle = "green";
+            ctx.fill();
         }
 
         function drawBlock(block) {
             const cells = block.cells;
-
-            /*
-            const cellsByPos = {};
-            cells.forEach((cell) => {
-                const key = `${cell.i},${cell.j}`;
-                if (!cellsByPos[key]) {
-                    cellsByPos[key] = [];
-                }
-                cellsByPos[key].push(cell);
-            });
-
-            Object.values(cellsByPos).forEach((cellGroup) => {
-                cellGroup.sort((a, b) => a.k - b.k);
-            });
-
-            Object.values(cellsByPos).forEach((cellGroup) => {
-                cellGroup.forEach((cell, index) => {
-                    const { i, j, k } = cell;
-                    const aboveCell = cellGroup[index + 1];
-
-                    paintCellWall(i, j, k, block.colors[2]);
-                    paintCellWall(i, j, k, block.colors[1], true);
-
-                    if (!aboveCell || aboveCell.k > k + 1) {
-                        paintCellFlat(i, j, k + 1, block.colors[0]);
-                    }
-                });
-            });
-            */
 
             cells.sort((a, b) => {
                 const dA = a.i + a.j - a.k;
@@ -177,10 +153,6 @@ window.onload = function () {
             for (let i = 0; i < cells.length; i++) {
                 const a = cells[i]
                 const b = cells[i + 1]
-
-                const a1 = { x: a.i, y: a.j - 0.5 };
-                const a2 = { x: a.i, y: a.j + 0.5 };
-                // console.log(a1, a2);
 
 
                 if (b && a.i + 1 == b.i && a.j == b.j) {
@@ -195,29 +167,16 @@ window.onload = function () {
             }
         }
 
-        function drawBlockGhost(block) {
-            let ghostBlock = {
-                colors: ["rgba(255,0,0,0.3)", "rgba(220, 20, 60, 0.3)", "rgba(139, 0, 0, 0.3)"],
-                cells: [],
-            };
-            block.cells.map((cell) => {
-                const ghostI = cell.i - cell.k;
-                const ghostJ = cell.j - cell.k;
-                ghostBlock.cells.push({ i: ghostI, j: ghostJ, k: cell.k });
-            });
-            //console.log(JSON.stringify(ghostBlock));
-            // drawBlock(ghostBlock);
-        }
-
-        for (let i = 0; i < gridSize; i++) {
-            for (let j = 0; j < gridSize; j++) {
+        // draw tilemap (todo: refactor to better integrate with Tileset cls)
+        for (let i = 0; i < tileset.w; i++) {
+            for (let j = 0; j < tileset.h; j++) {
                 const pos = gridToScreen(i, j, 0);
                 drawTileFlat(pos.x, pos.y, i, j);
                 ctx.stroke();
             }
         }
 
-        blocks
+        // blocks
             /*
             .sort((a, b) => {
                 const depthA = a.base.i + a.base.j - a.base.k;
@@ -225,8 +184,10 @@ window.onload = function () {
                 return depthA - depthB;
             })
             */
-            .forEach((block) => { drawBlock(block); drawBlockGhost(block) });
+        //    .forEach((block) => { drawBlock(block); drawBlockGhost(block) });
 
+        paintWallBetween(2, 2, 0, 3, 2, 0); 
+        paintWallBetween(3, 2, 0, 3, 1, 0);
         requestAnimationFrame(render);
     }
     render();
