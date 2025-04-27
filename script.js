@@ -15,11 +15,14 @@ const blocks = [
     },
 ];
 
+const blocks2 = [
+    new Wall(new Coordinate(2,2), new Coordinate(3,2)),
+];
+
 const tileset = new Tileset(9, 9, 100);
 console.log(tileset);
 
 
-const kShift = -3;
 const turnSpeed = 4;
 let activeBlockIndex = 0;
 let activeBlock = blocks[activeBlockIndex];
@@ -81,15 +84,6 @@ window.onload = function () {
         const angleInRadians = (camera.angle * Math.PI) / 180;
 
         function gridToScreen(i, j, k = 0) {
-            let screenX = ((i - j) * tileWidth) / 2;
-            let screenY = ((i + j) * tileHeight) / 2 - (k + kShift) * tileHeight;
-            return {
-                x: originX + screenX,
-                y: originY + screenY,
-            };
-        }
-
-        function gridToScreen2(i, j, k = 0) {
             const rotatedI =
                 i * Math.cos(angleInRadians) - j * Math.sin(angleInRadians);
             const rotatedJ =
@@ -97,16 +91,16 @@ window.onload = function () {
 
             let screenX = ((rotatedI - rotatedJ) * tileWidth) / 2;
             let screenY =
-                ((rotatedI + rotatedJ) * tileHeight) / 2 - (k + kShift) * tileHeight;
+                ((rotatedI + rotatedJ) * tileHeight) / 2 - k  * tileHeight;
             return {
                 x: originX + screenX,
                 y: originY + screenY,
             };
         }
 
-        function paintWallBetween(i1, j1, k1, i2, j2, k2) {
-            const { x: x1, y: y1 } = gridToScreen(i1, j1, k1);
-            const { x: x2, y: y2 } = gridToScreen(i2, j2, k2);
+        function paintWallBetween(start, end) {
+            const { x: x1, y: y1 } = gridToScreen(start.i, start.j, 0);
+            const { x: x2, y: y2 } = gridToScreen(end.i, end.j, 0);
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x1, y1 - tileHeight);
@@ -147,21 +141,12 @@ window.onload = function () {
             ctx.beginPath();
             ctx.arc(x, y, 2, 0, Math.PI * 2);
             ctx.fill();
-            ctx.font = "12px sans-serif";
             ctx.fillText(`${i},${j}`, x + 4, y - 4);
         });
-
-        // blocks
-            /*
-            .sort((a, b) => {
-                const depthA = a.base.i + a.base.j - a.base.k;
-                const depthB = b.base.i + b.base.j - b.base.k;
-                return depthA - depthB;
-            })
-            */
-        // .forEach((block) => { drawBlock(block); });
-
-        paintWallBetween(0, 0, 0, 1, 0, 0);
+        
+        blocks2.forEach((wall) => {
+            paintWallBetween(wall.start, wall.end); 
+        });
 
         requestAnimationFrame(render);
     }
@@ -171,7 +156,7 @@ window.onload = function () {
         if (activeBlock) {
             activeBlock.cells.forEach((cell) => cell.k--);
             const minK = Math.min(...activeBlock.cells.map((cell) => cell.k));
-            if (minK <= initalK + kShift * 2) {
+            if (minK <= 0) {
                 console.log(`Min K reached! ${minK}`);
                 activeBlock.cells.map((cell) => console.log(`Cell coords: ${cell.i - cell.k}, ${cell.j - cell.k}`));
                 activeBlockIndex++;
