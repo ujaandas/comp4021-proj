@@ -20,18 +20,19 @@ console.log(tileset);
 
 
 const kShift = -3;
+const turnSpeed = 4;
 let activeBlockIndex = 0;
 let activeBlock = blocks[activeBlockIndex];
 const fallSpeed = 1000;
 
 window.addEventListener("keydown", (e) => {
-    if (e.repeat) return;
+    // if (e.repeat) return;
 
     if (e.key === "ArrowLeft") {
-        camera.angle -= 10;
+        camera.angle += turnSpeed;
     }
     if (e.key === "ArrowRight") {
-        camera.angle += 10;
+        camera.angle -= turnSpeed;
     }
 
     if (activeBlock) {
@@ -75,11 +76,20 @@ window.onload = function () {
         const tileWidth = 100;
         const tileHeight = tileWidth / 2;
         const originX = canvas.width / 2;
-        const originY = 60;
+        const originY = 80;
 
         const angleInRadians = (camera.angle * Math.PI) / 180;
 
         function gridToScreen(i, j, k = 0) {
+            let screenX = ((i - j) * tileWidth) / 2;
+            let screenY = ((i + j) * tileHeight) / 2 - (k + kShift) * tileHeight;
+            return {
+                x: originX + screenX,
+                y: originY + screenY,
+            };
+        }
+
+        function gridToScreen2(i, j, k = 0) {
             const rotatedI =
                 i * Math.cos(angleInRadians) - j * Math.sin(angleInRadians);
             const rotatedJ =
@@ -94,47 +104,13 @@ window.onload = function () {
             };
         }
 
-        function drawTileFlat(x, y, i, j) {
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            i != undefined ? ctx.fillText(`${i}, ${j}`, x - 10, y + tileHeight / 2) : "";
-            ctx.lineTo(x + tileWidth / 2, y + tileHeight / 2);
-            ctx.lineTo(x, y + tileHeight);
-            ctx.lineTo(x - tileWidth / 2, y + tileHeight / 2);
-            ctx.closePath();
-        }
-
-        function paintCellFlat(i, j, k, col) {
-            const { x, y } = gridToScreen(i, j, k);
-            drawTileFlat(x, y);
-            ctx.fillStyle = col;
-            ctx.fill();
-        }
-
-        function drawTileWall(x, y, flipped = false) {
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x, y + tileHeight);
-            const offset = flipped ? tileWidth / 2 : -tileWidth / 2;
-            ctx.lineTo(x + offset, y + tileHeight / 2);
-            ctx.lineTo(x + offset, y - tileHeight / 2);
-            ctx.closePath();
-        }
-
-        function paintCellWall(i, j, k, col, flipped = false) {
-            const { x, y } = gridToScreen(i, j, k);
-            drawTileWall(x, y, flipped);
-            ctx.fillStyle = col;
-            ctx.fill();
-        }
-
         function paintWallBetween(i1, j1, k1, i2, j2, k2) {
             const { x: x1, y: y1 } = gridToScreen(i1, j1, k1);
             const { x: x2, y: y2 } = gridToScreen(i2, j2, k2);
             ctx.beginPath();
             ctx.moveTo(x1, y1);
-            ctx.lineTo(x1, y1 + tileHeight);
-            ctx.lineTo(x2, y2 + tileHeight);
+            ctx.lineTo(x1, y1 - tileHeight);
+            ctx.lineTo(x2, y2 - tileHeight);
             ctx.lineTo(x2, y2);
             ctx.closePath();
             ctx.fillStyle = "green";
@@ -150,31 +126,30 @@ window.onload = function () {
                 return dA - dB;
             });
 
-            for (let i = 0; i < cells.length; i++) {
-                const a = cells[i]
-                const b = cells[i + 1]
-
-
-                if (b && a.i + 1 == b.i && a.j == b.j) {
-                    //console.log(`a (${a.i}, ${a.j}, ${a.k}) and b (${b.i}, ${b.j}, ${b.k}) in same pos`);
-                    paintCellWall(a.i, a.j, a.k, "darkblue");
-                    paintCellWall(a.i, a.j, a.k, "blue", true);
-                    // if (b.k > a.k) continue;
-                } else {
-                    paintCellWall(a.i, a.j, a.k, block.colors[2]);
-                    paintCellWall(a.i, a.j, a.k, block.colors[1], true);
-                }
-            }
+            cells.map((cell) => {
+                paintWallBetween(cell.i - 1, cell.j, cell.k, cell.i, cell.j, cell.k);
+                paintWallBetween(cell.i, cell.j - 1, cell.k, cell.i, cell.j, cell.k);
+            });
         }
 
         // draw tilemap (todo: refactor to better integrate with Tileset cls)
-        for (let i = 0; i < tileset.w; i++) {
-            for (let j = 0; j < tileset.h; j++) {
-                const pos = gridToScreen(i, j, 0);
-                drawTileFlat(pos.x, pos.y, i, j);
+        tileset.adj.forEach((edges, key) => {
+            edges.forEach(edge => {
+                const { x: startX, y: startY } = gridToScreen(edge.start.i, edge.start.j);
+                const { x: endX, y: endY } = gridToScreen(edge.end.i, edge.end.j);
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
                 ctx.stroke();
-            }
-        }
+            });
+            const [i, j] = key.split(",").map(Number);
+            const { x, y } = gridToScreen(i, j);
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = "12px sans-serif";
+            ctx.fillText(`${i},${j}`, x + 4, y - 4);
+        });
 
         // blocks
             /*
@@ -184,10 +159,10 @@ window.onload = function () {
                 return depthA - depthB;
             })
             */
-        //    .forEach((block) => { drawBlock(block); drawBlockGhost(block) });
+        // .forEach((block) => { drawBlock(block); });
 
-        paintWallBetween(2, 2, 0, 3, 2, 0); 
-        paintWallBetween(3, 2, 0, 3, 1, 0);
+        paintWallBetween(0, 0, 0, 1, 0, 0);
+
         requestAnimationFrame(render);
     }
     render();
