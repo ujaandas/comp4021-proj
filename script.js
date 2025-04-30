@@ -1,167 +1,171 @@
-let camera = {
-    angle: 0,
-};
+class Block {
+  constructor(walls) {
+    this.walls = walls;
+  }
+  translate(di, dj) {
+    this.walls.forEach((wall) => {
+      wall.start.i += di;
+      wall.start.j += dj;
+      wall.end.i += di;
+      wall.end.j += dj;
+    });
+  }
+  clone() {
+    const clonedWalls = this.walls.map((wall) => wall.clone());
+    return new Block(clonedWalls);
+  }
+}
 
-const initalK = 4;
-const blocks = [
-    {
-        colors: ["rgba(255,0,0,1)", "rgba(220, 20, 60, 1)", "rgba(139, 0, 0, 1)"],
-        cells: [
-            { i: 2, j: 2, k: initalK },
-            //{ i: 2, j: 3, k: initalK },
-            //{ i: 2, j: 3, k: initalK + 1 },
-            { i: 3, j: 2, k: initalK },
-        ],
-    },
-];
+function getGhostColor(color) {
+  if (!color) color = "rgba(0,0,0,1)";
+  const match = color.match(
+    /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/
+  );
+  if (match) return `rgba(${match[1]}, ${match[2]}, ${match[3]}, 0.5)`;
+  return color;
+}
 
-const blocks2 = [
-    new Wall(new Coordinate(2,2), new Coordinate(3,2)),
-];
-
-const tileset = new Tileset(9, 9, 100);
-console.log(tileset);
-
-
+const camera = { angle: 0 };
 const turnSpeed = 4;
-let activeBlockIndex = 0;
-let activeBlock = blocks[activeBlockIndex];
-const fallSpeed = 1000;
+const n = 3; // TODO: bound this dynamically per block (ie; constrain within tileset graph)
 
 window.addEventListener("keydown", (e) => {
-    // if (e.repeat) return;
-
-    if (e.key === "ArrowLeft") {
-        camera.angle += turnSpeed;
+  if (e.key === "ArrowLeft") {
+    camera.angle = (camera.angle + turnSpeed + 360) % 360;
+  }
+  if (e.key === "ArrowRight") {
+    camera.angle = (camera.angle - turnSpeed + 360) % 360;
+  }
+  if (activeBlock) {
+    const key = e.key.toLowerCase();
+    if (key === "a") {
+      activeBlock.translate(-1, 1);
+      ghostBlock.translate(-1, 1);
     }
-    if (e.key === "ArrowRight") {
-        camera.angle -= turnSpeed;
+    if (key === "d") {
+      activeBlock.translate(1, -1);
+      ghostBlock.translate(1, -1);
     }
-
-    if (activeBlock) {
-        const key = e.key.toLowerCase();
-        if (key === "a")
-            activeBlock.cells.forEach((cell) => {
-                cell.i--;
-                cell.j++;
-            });
-        if (key === "d")
-            activeBlock.cells.forEach((cell) => {
-                cell.i++;
-                cell.j--;
-            });
-        if (key === "w")
-            activeBlock.cells.forEach((cell) => {
-                cell.i--;
-                cell.j--;
-            });
-        if (key === "s")
-            activeBlock.cells.forEach((cell) => {
-                cell.i++;
-                cell.j++;
-            });
+    if (key === "w") {
+      activeBlock.translate(-1, -1);
+      ghostBlock.translate(-1, -1);
     }
-
-    camera.angle = (camera.angle + 360) % 360;
+    if (key === "s") {
+      activeBlock.translate(1, 1);
+      ghostBlock.translate(1, 1);
+    }
+  }
 });
 
+// todo: block ctor to dynamically build walls
+const block1 = new Block([
+  new Wall(new Coordinate(2, 2), new Coordinate(3, 2), "rgba(255, 50, 50, 1)"),
+  new Wall(new Coordinate(3, 2), new Coordinate(3, 1), "rgba(255, 0, 0, 1)"),
+]);
+const block2 = new Block([
+  new Wall(new Coordinate(1, 4), new Coordinate(2, 4)),
+  new Wall(new Coordinate(2, 4), new Coordinate(2, 3)),
+  // new Wall(new Coordinate(4, 7), new Coordinate(4, 6)),
+  // new Wall(new Coordinate(4, 6), new Coordinate(5, 6)),
+]);
+const blocks = [block1, block2];
+let activeBlockIndex = 0;
+let activeBlock = blocks[activeBlockIndex];
+let ghostBlock = activeBlock ? activeBlock.clone() : null;
+
 window.onload = function () {
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+  const tileWidth = 100;
+  const tileHeight = tileWidth / 2;
+  const originX = canvas.width / 2;
+  const originY = 80;
+  const fallSpeed = 1000;
+  const ground = 5;
+  let lastFallTime = Date.now();
+  const tileset = new Tileset(9, 9, 100);
 
-    function render() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+  function gridToScreen(i, j, k = 0) {
+    const angleInRadians = (camera.angle * Math.PI) / 180;
+    const rotatedI =
+      i * Math.cos(angleInRadians) - j * Math.sin(angleInRadians);
+    const rotatedJ =
+      i * Math.sin(angleInRadians) + j * Math.cos(angleInRadians);
+    const screenX = ((rotatedI - rotatedJ) * tileWidth) / 2;
+    const screenY = ((rotatedI + rotatedJ) * tileHeight) / 2 - k * tileHeight;
+    return { x: originX + screenX, y: originY + screenY };
+  }
 
-        const gridSize = 9;
-        const tileWidth = 100;
-        const tileHeight = tileWidth / 2;
-        const originX = canvas.width / 2;
-        const originY = 80;
+  function paintWall(wall, depth = 0) {
+    const { x: x1, y: y1 } = gridToScreen(wall.start.i, wall.start.j, depth);
+    const { x: x2, y: y2 } = gridToScreen(wall.end.i, wall.end.j, depth);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x1, y1 - 50);
+    ctx.lineTo(x2, y2 - 50);
+    ctx.lineTo(x2, y2);
+    ctx.closePath();
+    ctx.fillStyle = wall.col;
+    ctx.fill();
+  }
 
-        const angleInRadians = (camera.angle * Math.PI) / 180;
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        function gridToScreen(i, j, k = 0) {
-            const rotatedI =
-                i * Math.cos(angleInRadians) - j * Math.sin(angleInRadians);
-            const rotatedJ =
-                i * Math.sin(angleInRadians) + j * Math.cos(angleInRadians);
+    tileset.adj.forEach((edges, key) => {
+      edges.forEach((edge) => {
+        const { x: startX, y: startY } = gridToScreen(
+          edge.start.i,
+          edge.start.j
+        );
+        const { x: endX, y: endY } = gridToScreen(edge.end.i, edge.end.j);
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+      });
+      const [i, j] = key.split(",").map(Number);
+      const { x, y } = gridToScreen(i, j);
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillText(`${i},${j}`, x + 4, y - 4);
+    });
 
-            let screenX = ((rotatedI - rotatedJ) * tileWidth) / 2;
-            let screenY =
-                ((rotatedI + rotatedJ) * tileHeight) / 2 - k  * tileHeight;
-            return {
-                x: originX + screenX,
-                y: originY + screenY,
-            };
-        }
+    blocks.forEach((block) => {
+      block.walls.forEach((wall) => paintWall(wall));
+    });
 
-        function paintWallBetween(start, end) {
-            const { x: x1, y: y1 } = gridToScreen(start.i, start.j, 0);
-            const { x: x2, y: y2 } = gridToScreen(end.i, end.j, 0);
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x1, y1 - tileHeight);
-            ctx.lineTo(x2, y2 - tileHeight);
-            ctx.lineTo(x2, y2);
-            ctx.closePath();
-            ctx.fillStyle = "green";
-            ctx.fill();
-        }
-
-        function drawBlock(block) {
-            const cells = block.cells;
-
-            cells.sort((a, b) => {
-                const dA = a.i + a.j - a.k;
-                const dB = b.i + b.j - b.k;
-                return dA - dB;
-            });
-
-            cells.map((cell) => {
-                paintWallBetween(cell.i - 1, cell.j, cell.k, cell.i, cell.j, cell.k);
-                paintWallBetween(cell.i, cell.j - 1, cell.k, cell.i, cell.j, cell.k);
-            });
-        }
-
-        // draw tilemap (todo: refactor to better integrate with Tileset cls)
-        tileset.adj.forEach((edges, key) => {
-            edges.forEach(edge => {
-                const { x: startX, y: startY } = gridToScreen(edge.start.i, edge.start.j);
-                const { x: endX, y: endY } = gridToScreen(edge.end.i, edge.end.j);
-                ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.lineTo(endX, endY);
-                ctx.stroke();
-            });
-            const [i, j] = key.split(",").map(Number);
-            const { x, y } = gridToScreen(i, j);
-            ctx.beginPath();
-            ctx.arc(x, y, 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillText(`${i},${j}`, x + 4, y - 4);
-        });
-        
-        blocks2.forEach((wall) => {
-            paintWallBetween(wall.start, wall.end); 
-        });
-
-        requestAnimationFrame(render);
+    if (ghostBlock) {
+      ghostBlock.walls.forEach((wall) => {
+        const ghostColor = getGhostColor(wall.col);
+        const newWall = wall.clone();
+        newWall.col = ghostColor;
+        paintWall(newWall, -n);
+      });
     }
-    render();
 
-    setInterval(() => {
-        if (activeBlock) {
-            activeBlock.cells.forEach((cell) => cell.k--);
-            const minK = Math.min(...activeBlock.cells.map((cell) => cell.k));
-            if (minK <= 0) {
-                console.log(`Min K reached! ${minK}`);
-                activeBlock.cells.map((cell) => console.log(`Cell coords: ${cell.i - cell.k}, ${cell.j - cell.k}`));
-                activeBlockIndex++;
-                activeBlock = blocks[activeBlockIndex] || null;
-            }
+    const now = Date.now();
+    if (activeBlock) {
+      if (!activeBlock.fallCount) activeBlock.fallCount = 0;
+      if (now - lastFallTime >= fallSpeed) {
+        if (activeBlock.fallCount < n) {
+          activeBlock.translate(1, 1);
+          activeBlock.fallCount++;
+        } else {
+          console.log(activeBlock.walls[0].start.i);
+          activeBlockIndex++;
+          activeBlock = blocks[activeBlockIndex] || null;
+          ghostBlock = activeBlock ? activeBlock.clone() : null;
         }
-    }, fallSpeed);
+        lastFallTime = now;
+      }
+    }
+
+    requestAnimationFrame(render);
+  }
+  render();
 };
