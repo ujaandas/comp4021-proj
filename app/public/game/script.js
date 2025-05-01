@@ -93,7 +93,7 @@ window.onload = function () {
   const originY = 80;
   const fallSpeed = 1000;
   let lastFallTime = Date.now();
-  const tileset = new Tileset(9, 9, 100);
+  const tileset = new Tileset(2, 2);
 
   function gridToScreen(i, j, h = 0) {
     const hOffset = h * tileHeight;
