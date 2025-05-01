@@ -7,9 +7,10 @@ class Coordinate {
 }
 
 class Wall {
-  constructor(a, b, col) {
+  constructor(a, b, h, col) {
     this.start = a;
     this.end = b;
+    this.h = h;
     this.col = col;
     this.drawn = false;
   }

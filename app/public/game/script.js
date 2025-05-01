@@ -59,12 +59,17 @@ window.addEventListener("keydown", (e) => {
 
 // todo: block ctor to dynamically build walls
 const block1 = new Block([
-  new Wall(new Coordinate(2, 2), new Coordinate(3, 2), "rgba(255, 50, 50, 1)"),
-  new Wall(new Coordinate(3, 2), new Coordinate(3, 1), "rgba(255, 0, 0, 1)"),
+  new Wall(
+    new Coordinate(2, 2),
+    new Coordinate(3, 2),
+    n,
+    "rgba(255, 50, 50, 1)"
+  ),
+  new Wall(new Coordinate(3, 2), new Coordinate(3, 1), n, "rgba(255, 0, 0, 1)"),
 ]);
 const block2 = new Block([
-  new Wall(new Coordinate(1, 4), new Coordinate(2, 4)),
-  new Wall(new Coordinate(2, 4), new Coordinate(2, 3)),
+  new Wall(new Coordinate(1, 4), new Coordinate(2, 4), n),
+  new Wall(new Coordinate(2, 4), new Coordinate(2, 3), n),
   // new Wall(new Coordinate(4, 7), new Coordinate(4, 6)),
   // new Wall(new Coordinate(4, 6), new Coordinate(5, 6)),
 ]);
@@ -72,6 +77,9 @@ const blocks = [block1, block2];
 let activeBlockIndex = 0;
 let activeBlock = blocks[activeBlockIndex];
 let ghostBlock = activeBlock ? activeBlock.clone() : null;
+for (let i = 0; i < n; i++) {
+  ghostBlock.walls.forEach((w) => w.n--);
+}
 
 window.onload = function () {
   const canvas = document.getElementById("canvas");
@@ -84,24 +92,29 @@ window.onload = function () {
   const originX = canvas.width / 2;
   const originY = 80;
   const fallSpeed = 1000;
-  const ground = 5;
   let lastFallTime = Date.now();
   const tileset = new Tileset(9, 9, 100);
 
-  function gridToScreen(i, j, k = 0) {
+  function gridToScreen(i, j, h = 0) {
+    const hOffset = h * tileHeight;
     const angleInRadians = (camera.angle * Math.PI) / 180;
     const rotatedI =
       i * Math.cos(angleInRadians) - j * Math.sin(angleInRadians);
     const rotatedJ =
       i * Math.sin(angleInRadians) + j * Math.cos(angleInRadians);
     const screenX = ((rotatedI - rotatedJ) * tileWidth) / 2;
-    const screenY = ((rotatedI + rotatedJ) * tileHeight) / 2 - k * tileHeight;
+    const screenY =
+      ((rotatedI + rotatedJ) * tileHeight) / 2 - tileHeight - hOffset;
     return { x: originX + screenX, y: originY + screenY };
   }
 
-  function paintWall(wall, depth = 0) {
-    const { x: x1, y: y1 } = gridToScreen(wall.start.i, wall.start.j, depth);
-    const { x: x2, y: y2 } = gridToScreen(wall.end.i, wall.end.j, depth);
+  function paintWall(wall) {
+    const { x: x1, y: y1 } = gridToScreen(
+      wall.start.i,
+      wall.start.j,
+      wall.start.h
+    );
+    const { x: x2, y: y2 } = gridToScreen(wall.end.i, wall.end.j, wall.end.h);
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x1, y1 - 50);
@@ -144,7 +157,7 @@ window.onload = function () {
         const ghostColor = getGhostColor(wall.col);
         const newWall = wall.clone();
         newWall.col = ghostColor;
-        paintWall(newWall, -n);
+        paintWall(newWall);
       });
     }
 
@@ -153,13 +166,16 @@ window.onload = function () {
       if (!activeBlock.fallCount) activeBlock.fallCount = 0;
       if (now - lastFallTime >= fallSpeed) {
         if (activeBlock.fallCount < n) {
-          activeBlock.translate(1, 1);
+          activeBlock.walls.forEach((w) => w.n--);
           activeBlock.fallCount++;
         } else {
           console.log(activeBlock.walls[0].start.i);
           activeBlockIndex++;
           activeBlock = blocks[activeBlockIndex] || null;
           ghostBlock = activeBlock ? activeBlock.clone() : null;
+          for (let i = 0; i < n; i++) {
+            ghostBlock.walls.forEach((w) => w.n--);
+          }
         }
         lastFallTime = now;
       }
