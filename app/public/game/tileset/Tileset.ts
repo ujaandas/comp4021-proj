@@ -1,6 +1,6 @@
-import { Block, GhostBlock } from "./Block.js";
-import { Coordinate } from "./Coordinate.js";
-import { Wall } from "./Wall.js";
+import { Block, GhostBlock } from "../components/Block.js";
+import { Coordinate } from "../components/Coordinate.js";
+import { Wall } from "../components/Wall.js";
 
 export class Tileset {
   public adj: Map<string, Wall[]> = new Map();

@@ -1,9 +1,9 @@
-import { Block } from "./Block.js";
-import { Coordinate } from "./Coordinate.js";
-import { InputHandler } from "./InputHandler.js";
-import { Renderer } from "./Renderer.js";
-import { Tileset } from "./Tileset.js";
-import { Wall } from "./Wall.js";
+import { Block } from "./components/Block.js";
+import { Coordinate } from "./components/Coordinate.js";
+import { InputHandler } from "./utils/InputHandler.js";
+import { Renderer } from "./render/Renderer.js";
+import { Tileset } from "./tileset/Tileset.js";
+import { Wall } from "./components/Wall.js";
 
 window.onload = function () {
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;

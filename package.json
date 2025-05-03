@@ -5,8 +5,9 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "cp-public": "cp app/public/{index.html,styles.css} dist/public",
+    "cp-public": "cp -r app/public/{index.html,styles} dist/public",
     "build": "tsc -p tsconfig.json && npm run cp-public",
+    "clean": "rm -rf dist",
     "start": "node --watch dist/src/server.js",
     "compile": "tsc --watch",
     "dev": "npm run build && npm run compile & npm run start"

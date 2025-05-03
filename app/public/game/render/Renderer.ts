@@ -1,5 +1,5 @@
-import { Block, GhostBlock } from "./Block.js";
-import { Wall } from "./Wall.js";
+import { Block, GhostBlock } from "../components/Block.js";
+import { Wall } from "../components/Wall.js";
 
 export class Renderer {
   private tileWidth = 100;
