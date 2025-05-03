@@ -1,26 +1,39 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="en">
 <head>
     <title>Multiplayer Game</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-<!-- Registration -->
-<form id="register-form" class="register-form">
-    <input type="text" id="register-username" placeholder="Username">
-    <input type="password" id="register-password" placeholder="Password">
-    <button type="submit" id="register-btn">Register</button>
-    <div id="register-message" class="warning center"></div>
-</form>
+<div class="auth-container">
+    <!-- Combined Auth Form -->
+    <div id="auth-form" class="auth-form">
+        <div class="auth-header">
+            <h2 id="auth-title">Login</h2>
+            <button id="toggle-auth-mode" class="toggle-btn">Need to register?</button>
+        </div>
 
-<!-- Login -->
-<form id="login-form" class="login-form">
-    <input type="text" id="login-username" placeholder="Username">
-    <input type="password" id="login-password" placeholder="Password">
-    <button type="submit" id="login-btn">Login</button>
-    <div id="login-message" class="warning center"></div>
-</form>
+        <form id="auth-submit-form">
+            <input type="text" id="auth-username" placeholder="Username" class="auth-input" required>
+            <input type="password" id="auth-password" placeholder="Password" class="auth-input" required>
+            <div id="auth-extra-fields" style="display: none;">
+                <!-- Additional fields for registration could go here -->
+            </div>
+            <button type="submit" id="auth-submit-btn" class="auth-btn">Login</button>
+            <div id="auth-message" class="auth-message"></div>
+        </form>
+    </div>
+
+    <!-- Logout Section (initially hidden) -->
+    <div id="logout-section" class="logout-section" style="display: none;">
+        <div class="user-info">
+            <span id="logged-in-user"></span>
+            <button id="logout-btn" class="logout-btn">Logout</button>
+        </div>
+        <div id="logout-message" class="auth-message"></div>
+    </div>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/registration.js"></script>

@@ -20,8 +20,12 @@ const Socket = (function() {
 
     const disconnect = function() {
         if (socket) {
-            socket.disconnect();
-            socket = null;
+            socket.emit("logout");
+
+            setTimeout(() => {
+                socket.disconnect();
+                socket = null;
+            }, 100);
         }
         clearTimeout(typingTimeout);
     };

@@ -27,6 +27,10 @@ const sessionConfig = session({
 
 app.use(sessionConfig);
 
+function containWordCharsOnly(text) {
+    return /^\w+$/.test(text);
+}
+
 app.post('/auth/register', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -37,6 +41,17 @@ app.post('/auth/register', async (req, res) => {
 
         // Read and parse users file
         const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
+
+        if (!username || !password) {
+            return res.json({ status: "error", error: "All fields are required" });
+        }
+
+        if (!containWordCharsOnly(username)) {
+            return res.json({
+                status: "error",
+                error: "Username can only contain letters, numbers, or underscores"
+            });
+        }
 
         if (users[username]) {
             return res.status(409).json({ status: "error", error: "Username already exists" });
@@ -120,6 +135,14 @@ io.on('connection', (socket) => {
                 console.log("Online users: ", JSON.stringify(onlineUsers, null, 2));
             }
         });
+
+        socket.on('logout', () => {
+
+            delete onlineUsers[user.username];
+
+            io.emit('user disconnected', socket.id);
+        });
+
     }
 });
 

@@ -1,60 +1,114 @@
 const SignInForm = (function() {
-    // This function initializes the UI
+    let isLoginMode = true; // Track current mode
+
     const initialize = function() {
-        console.log("Initializing form event listeners"); // Debug log
+        console.log("Initializing form event listeners");
 
-        // Submit event for the signin form
-        $("#login-form").on("submit", (e) => {
+        // Toggle between modes
+        $("#toggle-auth-mode").on("click", function(e) {
             e.preventDefault();
-            console.log("Login form submitted"); // Debug log
-
-            const username = $("#login-username").val().trim();
-            const password = $("#login-password").val().trim();
-
-            Authentication.signin(username, password,
-                () => {
-                    console.log("Login successful, connecting socket"); // Debug log
-                    Socket.connect();
-                },
-                (error) => {
-                    console.error("Login error:", error); // Debug log
-                    $("#login-message").text(error);
-                }
-            );
+            isLoginMode = !isLoginMode;
+            updateFormMode();
         });
 
-        // Submit event for the register form
-        $("#register-form").on("submit", (e) => {
+        // Submit handler for the auth form
+        $("#auth-submit-form").on("submit", function(e) {
             e.preventDefault();
-            console.log("Register form submitted"); // Debug log
+            const username = $("#auth-username").val().trim();
+            const password = $("#auth-password").val().trim();
 
-            const username = $("#register-username").val().trim();
-            const password = $("#register-password").val().trim();
-
-            Registration.register(username, password,
-                () => {
-                    console.log("Registration successful"); // Debug log
-                    $("#register-form").get(0).reset();
-                    $("#register-message").text("You can sign in now.").removeClass("error");
-                },
-                (error) => {
-                    console.error("Registration error:", error); // Debug log
-                    $("#register-message").text(error).addClass("error");
-                }
-            );
+            if (isLoginMode) {
+                console.log("Login form submitted");
+                Authentication.signin(username, password,
+                    () => {
+                        console.log("Login successful, connecting socket");
+                        Socket.connect();
+                        showLoggedInUI(username);
+                    },
+                    (error) => {
+                        console.error("Login error:", error);
+                        $("#auth-message").text(error).addClass("error").show();
+                    }
+                );
+            } else {
+                console.log("Register form submitted");
+                Registration.register(username, password,
+                    () => {
+                        console.log("Registration successful");
+                        $("#auth-message").text("You can sign in now.")
+                            .removeClass("error").addClass("success").show();
+                        // Switch to login mode after registration
+                        isLoginMode = true;
+                        updateFormMode();
+                    },
+                    (error) => {
+                        console.error("Registration error:", error);
+                        $("#auth-message").text(error).addClass("error").show();
+                    }
+                );
+            }
         });
+
+        // Logout button handler
+        $("#logout-btn").on("click", function(e) {
+            e.preventDefault();
+            logout();
+        });
+
+        // Initial setup
+        updateFormMode();
     };
 
-    return { initialize };
+    const updateFormMode = function() {
+        if (isLoginMode) {
+            $("#auth-title").text("Login");
+            $("#auth-submit-btn").text("Login");
+            $("#toggle-auth-mode").text("Need to register?");
+        } else {
+            $("#auth-title").text("Register");
+            $("#auth-submit-btn").text("Register");
+            $("#toggle-auth-mode").text("Already have an account?");
+        }
+        // Clear form and messages
+        $("#auth-submit-form").trigger("reset");
+        $("#auth-message").text("").removeClass("error success").hide();
+    };
+
+    const showLoggedInUI = function(username) {
+        $("#auth-form").hide();
+        $("#logout-section").show();
+        $("#logged-in-user").text("Welcome, " + username);
+    };
+
+    const showLoggedOutUI = function() {
+        $("#auth-form").show();
+        $("#logout-section").hide();
+        isLoginMode = true;
+        updateFormMode();
+    };
+
+    const logout = function() {
+        Socket.disconnect();
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        showLoggedOutUI();
+        $('#logout-message').text('You have been logged out').show();
+        setTimeout(() => $('#logout-message').fadeOut(), 3000);
+    };
+
+    return {
+        initialize,
+        showLoggedInUI,
+        showLoggedOutUI
+    };
 })();
 
 const UI = (function() {
-
-    const components = [SignInForm];
-
     const initialize = function() {
-        for (const component of components) {
-            component.initialize();
+        SignInForm.initialize();
+
+        if (localStorage.getItem('token')) {
+            SignInForm.showLoggedInUI(localStorage.getItem('username'));
         }
     };
 
