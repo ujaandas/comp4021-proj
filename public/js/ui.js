@@ -4,6 +4,17 @@ const SignInForm = (function() {
     const initialize = function() {
         console.log("Initializing form event listeners");
 
+        Avatar.populate($("#auth-avatar"));
+// Update avatar preview when selection changes
+        $("#auth-avatar").on("change", function() {
+            const selectedName = $(this).val();
+            const emojiCode = Avatar.getCode(selectedName);
+            $("#avatar-preview").html(emojiCode);
+        });
+
+        // Trigger initial preview update
+        $("#auth-avatar").trigger("change");
+
         // Toggle between modes
         $("#toggle-auth-mode").on("click", function(e) {
             e.preventDefault();
@@ -93,6 +104,8 @@ const SignInForm = (function() {
             $("#name-field").hide();
             $("#avatar-field").hide();
             $("#auth-password-confirm").removeAttr("required");
+            $("#auth-avatar").removeAttr("required");
+            $("#auth-name").removeAttr("required");
         } else {
             $("#auth-title").text("Register");
             $("#auth-submit-btn").text("Register");
@@ -102,6 +115,7 @@ const SignInForm = (function() {
             $("#avatar-field").show();
             $("#auth-password-confirm").attr("required", "true");
             $("#auth-name").attr("required", "true");
+            $("#auth-avatar").attr("required", "true");  // Add this line
         }
         // Clear form and messages
         $("#auth-submit-form").trigger("reset");

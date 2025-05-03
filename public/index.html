@@ -14,29 +14,28 @@
             <button id="toggle-auth-mode" class="toggle-btn">Need to register?</button>
         </div>
 
-        <div class="form-field" id="name-field" style="display: none;">
-            <input type="text" id="auth-name" placeholder="Full Name" class="auth-input">
-        </div>
-
         <form id="auth-submit-form">
-            <div class="form-field">
-                <input type="text" id="auth-username" placeholder="Username" class="auth-input" required>
+            <div class="form-field" id="name-field">
+                <input type="text" id="auth-name" name="name" placeholder="Full Name" class="auth-input">
             </div>
 
-            <div class="form-field" id="avatar-field" style="display: none;">
-                <label for="auth-avatar">Profile Picture:</label>
-                <select id="auth-avatar" class="auth-input">
-                    <option value="avatar1.jpg">Avatar 1</option>
+            <div class="form-field">
+                <input type="text" id="auth-username" name="username" placeholder="Username" class="auth-input" required>
+            </div>
+
+            <div class="form-field" id="avatar-field">
+                <select id="auth-avatar" class="auth-input" name="avatar" >
+                    <option value="">Select your avatar</option>
                 </select>
             </div>
 
             <div class="form-field">
-                <input type="password" id="auth-password" placeholder="Password" class="auth-input" required>
+                <input type="password" id="auth-password" name="password" placeholder="Password" class="auth-input" required>
             </div>
 
             <!-- Add this new field for password confirmation -->
             <div class="form-field" id="password-confirm-field" style="display: none;">
-                <input type="password" id="auth-password-confirm" placeholder="Confirm Password" class="auth-input">
+                <input type="password" id="auth-password-confirm" name="password_confirm" placeholder="Confirm Password" class="auth-input">
             </div>
 
             <div id="auth-extra-fields" class="form-field" style="display: none;">
@@ -64,6 +63,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/registration.js"></script>
 <script src="/js/authentication.js"></script>
+<script src="/js/avatar.js"></script>
 <script src="/js/socket.js"></script>
 <script src="/js/ui.js"></script>
 <script>

@@ -99,13 +99,8 @@
     margin-bottom: 20px; /* Additional spacing between fields */
 }
 
-/* If you want even more spacing between specific elements */
-#auth-username {
-    margin-bottom: 15px; /* Example of specific field spacing */
-}
-
-#auth-password {
-    margin-bottom: 15px;
+#avatar-avatar {
+    margin-bottom: 30px; !important;
 }
 
 /* Add to your CSS file */
