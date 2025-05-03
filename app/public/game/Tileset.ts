@@ -35,11 +35,11 @@ class Wall {
   private _colour: string;
   private _drawn: boolean;
 
-  constructor(a: Coordinate, b: Coordinate, h: number, col: string) {
+  constructor(a: Coordinate, b: Coordinate, h: number, col?: string) {
     this._start = a;
     this._end = b;
     this._h = h;
-    this._colour = col;
+    this._colour = col || "black";
     this._drawn = false;
   }
 
@@ -59,6 +59,22 @@ class Wall {
     this._end = value;
   }
 
+  get colour() {  
+    return this._colour;
+  }
+
+  set colour(value: string) {
+    this._colour = value;
+  }
+
+  get h() {
+    return this._h;
+  }
+
+  set h(value: number) {
+    this._h = value;
+  }
+
   clone() {
     return new Wall(
       new Coordinate(this.start.i, this.start.j),
@@ -69,9 +85,43 @@ class Wall {
   }
 }
 
+class Block {
+  private _walls: Wall[];
+  private _fallCount = 0;
+
+  constructor(walls: Wall[]) {
+    this._walls = walls;
+  }
+
+  translate(di: number, dj: number) {
+    this._walls.forEach((wall) => {
+      wall.start.i += di;
+      wall.start.j += dj;
+      wall.end.i += di;
+      wall.end.j += dj;
+    });
+  }
+
+  get walls() {
+    return this._walls;
+  }
+
+  get fallCount() {
+    return this._fallCount;
+  }
+
+  set fallCount(value: number) {
+    this._fallCount = value;
+  }
+
+  clone() {
+    const clonedWalls = this._walls.map((wall) => wall.clone());
+    return new Block(clonedWalls);
+  }
+}
+
 class Tileset {
   private _tileW: number;
-
   private _adj: Map<string, Wall[]>;
 
   constructor(w: number, h: number) {

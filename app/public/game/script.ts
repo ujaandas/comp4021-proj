@@ -1,22 +1,4 @@
-class Block {
-  constructor(walls) {
-    this.walls = walls;
-  }
-  translate(di, dj) {
-    this.walls.forEach((wall) => {
-      wall.start.i += di;
-      wall.start.j += dj;
-      wall.end.i += di;
-      wall.end.j += dj;
-    });
-  }
-  clone() {
-    const clonedWalls = this.walls.map((wall) => wall.clone());
-    return new Block(clonedWalls);
-  }
-}
-
-function getGhostColor(color) {
+function getGhostColor(color: string) {
   if (!color) color = "rgba(0,0,0,1)";
   const match = color.match(
     /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/
@@ -36,7 +18,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") {
     camera.angle = (camera.angle - turnSpeed + 360) % 360;
   }
-  if (activeBlock) {
+  if (activeBlock && ghostBlock) {
     const key = e.key.toLowerCase();
     if (key === "a") {
       activeBlock.translate(-1, 1);
@@ -78,11 +60,11 @@ let activeBlockIndex = 0;
 let activeBlock = blocks[activeBlockIndex];
 let ghostBlock = activeBlock ? activeBlock.clone() : null;
 for (let i = 0; i < n; i++) {
-  ghostBlock.walls.forEach((w) => w.n--);
+  ghostBlock?.walls.forEach((wall) => wall.h--);
 }
 
 window.onload = function () {
-  const canvas = document.getElementById("canvas");
+  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
   const ctx = canvas.getContext("2d");
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -93,9 +75,9 @@ window.onload = function () {
   const originY = 80;
   const fallSpeed = 1000;
   let lastFallTime = Date.now();
-  const tileset = new Tileset(2, 2);
+  const tileset = new Tileset(9, 9);
 
-  function gridToScreen(i, j, h = 0) {
+  function gridToScreen(i: number, j: number, h = 0) {
     const hOffset = h * tileHeight;
     const angleInRadians = (camera.angle * Math.PI) / 180;
     const rotatedI =
@@ -108,24 +90,30 @@ window.onload = function () {
     return { x: originX + screenX, y: originY + screenY };
   }
 
-  function paintWall(wall) {
+  function paintWall(wall: Wall) {
     const { x: x1, y: y1 } = gridToScreen(
       wall.start.i,
       wall.start.j,
-      wall.start.h
+      wall.h
     );
-    const { x: x2, y: y2 } = gridToScreen(wall.end.i, wall.end.j, wall.end.h);
+
+    const { x: x2, y: y2 } = gridToScreen(wall.end.i, wall.end.j, wall.h);
+
+    if (!ctx) return;
+
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x1, y1 - 50);
     ctx.lineTo(x2, y2 - 50);
     ctx.lineTo(x2, y2);
     ctx.closePath();
-    ctx.fillStyle = wall.col;
+    ctx.fillStyle = wall.colour;
     ctx.fill();
   }
 
   function render() {
+    if (!ctx) return;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     tileset.adj.forEach((edges, key) => {
@@ -154,9 +142,9 @@ window.onload = function () {
 
     if (ghostBlock) {
       ghostBlock.walls.forEach((wall) => {
-        const ghostColor = getGhostColor(wall.col);
+        const ghostColor = getGhostColor(wall.colour);
         const newWall = wall.clone();
-        newWall.col = ghostColor;
+        newWall.colour = ghostColor;
         paintWall(newWall);
       });
     }
@@ -166,7 +154,7 @@ window.onload = function () {
       if (!activeBlock.fallCount) activeBlock.fallCount = 0;
       if (now - lastFallTime >= fallSpeed) {
         if (activeBlock.fallCount < n) {
-          activeBlock.walls.forEach((w) => w.n--);
+          activeBlock.walls.forEach((wall) => wall.h--);
           activeBlock.fallCount++;
         } else {
           console.log(activeBlock.walls[0].start.i);
@@ -174,7 +162,7 @@ window.onload = function () {
           activeBlock = blocks[activeBlockIndex] || null;
           ghostBlock = activeBlock ? activeBlock.clone() : null;
           for (let i = 0; i < n; i++) {
-            ghostBlock.walls.forEach((w) => w.n--);
+            ghostBlock?.walls.forEach((w) => w.h--);
           }
         }
         lastFallTime = now;
