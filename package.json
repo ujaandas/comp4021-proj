@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
+  "type": "module",
   "scripts": {
+    "cp-public": "cp app/public/{index.html,styles.css} dist/public",
     "build": "tsc -p tsconfig.json && npm run cp-public",
-    "cp-public": "cp -r app/public dist/public",
     "start": "node --watch dist/src/server.js",
     "compile": "tsc --watch",
     "dev": "npm run build && npm run compile & npm run start"
