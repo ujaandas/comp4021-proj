@@ -34,7 +34,7 @@ const SignInForm = (function() {
                     () => {
                         console.log("Login successful, connecting socket");
                         Socket.connect();
-                        showLoggedInUI(username);
+                        window.location.href = '/lobby.html';
                     },
                     (error) => {
                         console.error("Login error:", error);

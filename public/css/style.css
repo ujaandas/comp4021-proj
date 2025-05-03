@@ -181,3 +181,119 @@
 .logout-btn:hover {
     background-color: #d32f2f;
 }
+
+.lobby-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f5f5f5;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.lobby-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.players-list, .requests-list {
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.player-item, .request-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.player-item:last-child, .request-item:last-child {
+    border-bottom: none;
+}
+
+.request-btn, .accept-btn, .decline-btn, .game-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.request-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.request-btn:disabled {
+    background-color: #cccccc;
+}
+
+.accept-btn {
+    background-color: #4CAF50;
+    color: white;
+    margin-right: 5px;
+}
+
+.decline-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.game-btn {
+    background-color: #2196F3;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background-color: #ff6b6b;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.player-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.player-name {
+    flex: 1;
+    min-width: 120px;
+}
+
+.request-status {
+    font-size: 0.9em;
+    color: #ff6b6b;
+    min-width: 120px;
+    text-align: right;
+    padding-right: 8px;
+}
+
+.request-btn {
+    width: 120px;
+}
