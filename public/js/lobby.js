@@ -38,6 +38,7 @@ const Lobby = (function() {
         // Game request was accepted
         socket.on('game-start', ({ opponent, isInitiator }) => {
             startGameWithOpponent(opponent, isInitiator);
+            window.location.href = '/game.html';
         });
 
         socket.on('game-declined', (fromUser) => {
@@ -74,7 +75,7 @@ const Lobby = (function() {
         });
 
         // Start game button
-        $('#start-game-btn').on('click', () => {
+/*        $('#start-game-btn').on('click', () => {
             if (currentGame && currentGame.isInitiator) {
                 socket.emit('game-ready', {
                     from: currentUser,
@@ -83,7 +84,7 @@ const Lobby = (function() {
                 // Redirect to game page
                 window.location.href = '/game.html';
             }
-        });
+        });*/
     };
 
     const updateOnlinePlayersList = function(players) {

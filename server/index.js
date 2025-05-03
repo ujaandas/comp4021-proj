@@ -168,31 +168,49 @@ io.on('connection', (socket) => {
         }
     });
 
-    // When a player accepts a game request
+
+// Add this near your onlinePlayers Map
+    const activeGames = new Map();
+
+// Modify the game-accept handler to track the game
     socket.on('game-accept', ({ to }) => {
         const initiator = onlinePlayers.get(to);
         const acceptor = onlinePlayers.get(user.username);
 
         if (initiator && acceptor && !initiator.inGame && !acceptor.inGame) {
-            // Mark both players as in game
+            // Create game record
+            const gameId = `${to}-${user.username}-${Date.now()}`;
+            activeGames.set(gameId, {
+                players: [to, user.username],
+                createdAt: Date.now()
+            });
+
+            // Store game ID with players
+            onlinePlayers.get(user.username).gameId = gameId;
+            onlinePlayers.get(to).gameId = gameId;
+
+            // Mark as in game
             onlinePlayers.get(user.username).inGame = true;
             onlinePlayers.get(to).inGame = true;
 
-            // Notify both players
-            io.to(initiator.socketId).emit('game-start', {
-                opponent: user.username,
-                isInitiator: true
-            });
+            // Notify players
+            setTimeout(() => {
+                io.to(initiator.socketId).emit('game-start', {
+                    gameId,
+                    opponent: user.username,
+                    isInitiator: true
+                });
 
-            io.to(acceptor.socketId).emit('game-start', {
-                opponent: to,
-                isInitiator: false
-            });
+                io.to(acceptor.socketId).emit('game-start', {
+                    gameId,
+                    opponent: to,
+                    isInitiator: false
+                });
+            }, 100);
 
             broadcastOnlinePlayers();
         }
     });
-
 // When a player declines a game request
     socket.on('game-decline', ({ to }) => {
         const initiator = onlinePlayers.get(to);
@@ -254,6 +272,19 @@ io.on('connection', (socket) => {
         }));
         io.emit('online-players', playersList);
     }
+
+    app.get('/api/game-status', (req, res) => {
+        if (!req.session.user) {
+            return res.redirect('/');
+        }
+
+        const player = onlinePlayers.get(req.session.user.username);
+        res.json({
+            inGame: player?.inGame || false,
+            opponent: player?.gameId ?
+                activeGames.get(player.gameId).players.find(p => p !== req.session.user.username) : null
+        });
+    });
 });
 
 const PORT = process.env.PORT || 8000;
