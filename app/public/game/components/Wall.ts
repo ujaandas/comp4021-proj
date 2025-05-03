@@ -4,7 +4,7 @@ export class Wall {
   constructor(
     public start: Coordinate,
     public end: Coordinate,
-    public h: number,
+    public height: number,
     public colour: string = "black"
   ) {}
 
@@ -12,7 +12,7 @@ export class Wall {
     return new Wall(
       new Coordinate(this.start.i, this.start.j),
       new Coordinate(this.end.i, this.end.j),
-      this.h,
+      this.height,
       this.colour
     );
   }

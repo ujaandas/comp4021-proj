@@ -1,3 +1,5 @@
+import { Settings } from "../utils/Settings.js";
+import { Coordinate } from "./Coordinate.js";
 import { Wall } from "./Wall.js";
 
 export class Block {
@@ -13,6 +15,23 @@ export class Block {
 
   constructor(private _walls: Wall[]) {
     this._walls = _walls.map((wall) => wall.clone());
+  }
+
+  static makeBlockOnPoint(i: number, j: number): Block {
+    return new Block([
+      new Wall(
+        new Coordinate(i - 1, j),
+        new Coordinate(i, j),
+        3,
+        "rgba(255, 0, 0, 1)"
+      ),
+      new Wall(
+        new Coordinate(i, j),
+        new Coordinate(i, j - 1),
+        3,
+        "rgba(255, 0, 0, 1)"
+      ),
+    ]);
   }
 
   translate(di: number, dj: number): void {
@@ -32,14 +51,14 @@ export class Block {
 export class GhostBlock extends Block {
   private static readonly TRANSPARENCY = 0.5;
 
-  constructor(public block: Block, public offset: number) {
+  constructor(public block: Block) {
     super(block.walls.map((wall) => wall.clone()));
     this.applyOffset();
   }
 
   private applyOffset(): void {
     this.walls.forEach((wall) => {
-      wall.h -= this.offset;
+      wall.height -= Settings.fallHeight;
       wall.colour = GhostBlock.getGhostColor(wall.colour);
     });
   }

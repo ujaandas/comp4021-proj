@@ -1,5 +1,6 @@
 import { Block, GhostBlock } from "../components/Block.js";
 import { Wall } from "../components/Wall.js";
+import { Settings } from "../utils/Settings.js";
 
 export class Renderer {
   private tileWidth = 100;
@@ -11,8 +12,8 @@ export class Renderer {
     private canvas: HTMLCanvasElement,
     private ctx: CanvasRenderingContext2D
   ) {
-    this.originX = canvas.width / 2;
-    this.originY = 80;
+    this.originX = canvas.width / 2 + Settings.gameWidthOffset;
+    this.originY = canvas.height / 2 + Settings.gameHeightOffset;
   }
 
   private gridToScreen(
@@ -46,10 +47,15 @@ export class Renderer {
         const start = this.gridToScreen(
           edge.start.i,
           edge.start.j,
-          edge.h,
+          edge.height,
           angle
         );
-        const end = this.gridToScreen(edge.end.i, edge.end.j, edge.h, angle);
+        const end = this.gridToScreen(
+          edge.end.i,
+          edge.end.j,
+          edge.height,
+          angle
+        );
         this.ctx.beginPath();
         this.ctx.moveTo(start.x, start.y);
         this.ctx.lineTo(end.x, end.y);
@@ -64,13 +70,18 @@ export class Renderer {
   }
 
   private paintWall(wall: Wall, angle: number): void {
-    const start = this.gridToScreen(wall.start.i, wall.start.j, wall.h, angle);
-    const end = this.gridToScreen(wall.end.i, wall.end.j, wall.h, angle);
+    const start = this.gridToScreen(
+      wall.start.i,
+      wall.start.j,
+      wall.height,
+      angle
+    );
+    const end = this.gridToScreen(wall.end.i, wall.end.j, wall.height, angle);
 
     this.ctx.beginPath();
     this.ctx.moveTo(start.x, start.y);
-    this.ctx.lineTo(start.x, start.y - 50);
-    this.ctx.lineTo(end.x, end.y - 50);
+    this.ctx.lineTo(start.x, start.y - Settings.blockHeight);
+    this.ctx.lineTo(end.x, end.y - Settings.blockHeight);
     this.ctx.lineTo(end.x, end.y);
     this.ctx.closePath();
     this.ctx.fillStyle = wall.colour;

@@ -45,14 +45,22 @@ export class Tileset {
 
   addBlock(block: Block): void {
     this.blocks.push(block);
-    this.activeBlockGhost = new GhostBlock(block, 3);
+    if (!this.activeBlockGhost) {
+      this.activeBlockGhost = new GhostBlock(block);
+    }
   }
 
   get activeBlock(): Block | null {
     return this.blocks[this.activeBlockIndex] || null;
   }
 
-  advanceBlock(): void {
+  setNextActiveBlock(): void {
     this.activeBlockIndex++;
+  }
+
+  setNextGhostBlock(): void {
+    if (this.activeBlock) {
+      this.activeBlockGhost = new GhostBlock(this.activeBlock);
+    }
   }
 }
