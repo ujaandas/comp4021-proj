@@ -1,62 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Multiplayer Game</title>
+    <title>Tetris Multiplayer</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-<div class="auth-container">
-    <!-- Combined Auth Form -->
-    <div id="auth-form" class="auth-form">
-        <div class="auth-header">
-            <h2 id="auth-title">Login</h2>
-            <button id="toggle-auth-mode" class="toggle-btn">Need to register?</button>
+<div class="background-gradient">
+    <div class="particles"></div>
+    <div class="auth-container">
+        <!-- Combined Auth Form -->
+        <div id="auth-form" class="auth-form">
+            <div class="logo">
+                <span class="logo-tetris">TETRIS</span>
+                <span class="logo-multi">MULTIPLAYER</span>
+            </div>
+
+            <div class="auth-header">
+                <h2 id="auth-title">LOGIN</h2>
+                <button id="toggle-auth-mode" class="toggle-btn">Need to register? <span class="highlight">Sign Up</span></button>
+            </div>
+
+            <form id="auth-submit-form">
+                <div class="form-field" id="name-field" style="display: none;">
+                    <input type="text" id="auth-name" name="name" placeholder="Full Name" class="auth-input">
+                </div>
+
+                <div class="form-field">
+                    <input type="text" id="auth-username" name="username" placeholder="Username" class="auth-input" required>
+                </div>
+
+                <div class="form-field" id="avatar-field" style="display: none;">
+                    <select id="auth-avatar" class="auth-input" name="avatar">
+                        <option value="">Select your avatar</option>
+                    </select>
+<!--                    <div class="avatar-preview-container">
+                        <div id="avatar-preview" class="avatar-preview"></div>
+                    </div>-->
+                </div>
+
+                <div class="form-field">
+                    <input type="password" id="auth-password" name="password" placeholder="Password" class="auth-input" required>
+                </div>
+
+                <div class="form-field" id="password-confirm-field" style="display: none;">
+                    <input type="password" id="auth-password-confirm" name="password_confirm" placeholder="Confirm Password" class="auth-input">
+                </div>
+
+                <div id="auth-extra-fields" class="form-field" style="display: none;">
+                    <!-- Additional fields for registration could go here -->
+                </div>
+
+                <div class="form-field">
+                    <button type="submit" id="auth-submit-btn" class="auth-btn pulse">LOGIN</button>
+                </div>
+
+                <div id="auth-message" class="auth-message"></div>
+            </form>
         </div>
 
-        <form id="auth-submit-form">
-            <div class="form-field" id="name-field">
-                <input type="text" id="auth-name" name="name" placeholder="Full Name" class="auth-input">
+        <!-- Logout Section (initially hidden) -->
+        <div id="logout-section" class="logout-section" style="display: none;">
+            <div class="user-info">
+                <span id="logged-in-user"></span>
+                <button id="logout-btn" class="logout-btn">Logout</button>
             </div>
-
-            <div class="form-field">
-                <input type="text" id="auth-username" name="username" placeholder="Username" class="auth-input" required>
-            </div>
-
-            <div class="form-field" id="avatar-field">
-                <select id="auth-avatar" class="auth-input" name="avatar" >
-                    <option value="">Select your avatar</option>
-                </select>
-            </div>
-
-            <div class="form-field">
-                <input type="password" id="auth-password" name="password" placeholder="Password" class="auth-input" required>
-            </div>
-
-            <!-- Add this new field for password confirmation -->
-            <div class="form-field" id="password-confirm-field" style="display: none;">
-                <input type="password" id="auth-password-confirm" name="password_confirm" placeholder="Confirm Password" class="auth-input">
-            </div>
-
-            <div id="auth-extra-fields" class="form-field" style="display: none;">
-                <!-- Additional fields for registration could go here -->
-            </div>
-
-            <div class="form-field">
-                <button type="submit" id="auth-submit-btn" class="auth-btn">Login</button>
-            </div>
-
-            <div id="auth-message" class="auth-message"></div>
-        </form>
-    </div>
-
-    <!-- Logout Section (initially hidden) -->
-    <div id="logout-section" class="logout-section" style="display: none;">
-        <div class="user-info">
-            <span id="logged-in-user"></span>
-            <button id="logout-btn" class="logout-btn">Logout</button>
+            <div id="logout-message" class="auth-message"></div>
         </div>
-        <div id="logout-message" class="auth-message"></div>
     </div>
 </div>
 
