@@ -32,6 +32,23 @@ const SignInForm = (function() {
                 );
             } else {
                 console.log("Register form submitted");
+                const passwordConfirm = $("#auth-password-confirm").val().trim();
+
+                if (password !== passwordConfirm) {
+                    $("#auth-message").text("Passwords do not match").addClass("error").show();
+                    $("#auth-password").addClass("password-mismatch");
+                    $("#auth-password-confirm").addClass("password-mismatch");
+                    return;
+                } else {
+                    $("#auth-password").removeClass("password-mismatch").addClass("password-match");
+                    $("#auth-password-confirm").removeClass("password-mismatch").addClass("password-match");
+                }
+
+                if (password.length < 6) {
+                    $("#auth-message").text("Password should be at least 6 characters").addClass("error").show();
+                    return;
+                }
+
                 Registration.register(username, password,
                     () => {
                         console.log("Registration successful");
@@ -64,10 +81,14 @@ const SignInForm = (function() {
             $("#auth-title").text("Login");
             $("#auth-submit-btn").text("Login");
             $("#toggle-auth-mode").text("Need to register?");
+            $("#password-confirm-field").hide();
+            $("#auth-password-confirm").removeAttr("required");
         } else {
             $("#auth-title").text("Register");
             $("#auth-submit-btn").text("Register");
             $("#toggle-auth-mode").text("Already have an account?");
+            $("#password-confirm-field").show();
+            $("#auth-password-confirm").attr("required", "true");
         }
         // Clear form and messages
         $("#auth-submit-form").trigger("reset");

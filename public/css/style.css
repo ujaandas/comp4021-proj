@@ -108,6 +108,14 @@
     margin-bottom: 15px;
 }
 
+.password-mismatch {
+    border: 1px solid red !important;
+}
+
+.password-match {
+    border: 1px solid green !important;
+}
+
 .auth-btn {
     margin-top: 15px; /* Extra space above the button */
 }
