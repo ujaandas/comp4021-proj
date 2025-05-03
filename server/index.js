@@ -33,16 +33,12 @@ function containWordCharsOnly(text) {
 
 app.post('/auth/register', async (req, res) => {
     try {
-        const { username, password } = req.body;
-
-        if (!username || !password) {
-            return res.status(400).json({ status: "error", error: "All fields are required" });
-        }
+        const { username, avatar, name, password } = req.body;
 
         // Read and parse users file
         const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
 
-        if (!username || !password) {
+        if (!username || !avatar || !name || !password) {
             return res.json({ status: "error", error: "All fields are required" });
         }
 
@@ -60,8 +56,11 @@ app.post('/auth/register', async (req, res) => {
         // Hash the password
         const hash = await bcrypt.hash(password, 10);
 
-        // Add new user
-        users[username] = { username, password: hash };
+        users[username] = {
+            avatar: avatar,
+            name: name,
+            password: hash  // Store the hashed password, not the plain text
+        };
 
         // Write updated users back to file
         fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
@@ -88,6 +87,8 @@ app.post('/auth/login', async (req, res) => {
 
         const user = {
             username: username,
+            avatar: users[username].avatar,
+            name: users[username].name
         };
 
         req.session.user = user;
@@ -119,6 +120,7 @@ io.on('connection', (socket) => {
     const user = socket.request.session.user;
     if (user) {
         onlineUsers[user.username] = {
+            avatar: user.avatar,
             name: user.name
         };
 

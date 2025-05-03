@@ -14,9 +14,20 @@
             <button id="toggle-auth-mode" class="toggle-btn">Need to register?</button>
         </div>
 
+        <div class="form-field" id="name-field" style="display: none;">
+            <input type="text" id="auth-name" placeholder="Full Name" class="auth-input">
+        </div>
+
         <form id="auth-submit-form">
             <div class="form-field">
                 <input type="text" id="auth-username" placeholder="Username" class="auth-input" required>
+            </div>
+
+            <div class="form-field" id="avatar-field" style="display: none;">
+                <label for="auth-avatar">Profile Picture:</label>
+                <select id="auth-avatar" class="auth-input">
+                    <option value="avatar1.jpg">Avatar 1</option>
+                </select>
             </div>
 
             <div class="form-field">

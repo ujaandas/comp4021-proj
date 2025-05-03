@@ -33,6 +33,8 @@ const SignInForm = (function() {
             } else {
                 console.log("Register form submitted");
                 const passwordConfirm = $("#auth-password-confirm").val().trim();
+                const name = $("#auth-name").val().trim();
+                const avatar = $("#auth-avatar").val();
 
                 if (password !== passwordConfirm) {
                     $("#auth-message").text("Passwords do not match").addClass("error").show();
@@ -49,7 +51,13 @@ const SignInForm = (function() {
                     return;
                 }
 
-                Registration.register(username, password,
+                // Check name is provided
+                if (!name) {
+                    $("#auth-message").text("Please enter your name").addClass("error").show();
+                    return;
+                }
+
+                Registration.register(username, password, name, avatar,
                     () => {
                         console.log("Registration successful");
                         $("#auth-message").text("You can sign in now.")
@@ -82,13 +90,18 @@ const SignInForm = (function() {
             $("#auth-submit-btn").text("Login");
             $("#toggle-auth-mode").text("Need to register?");
             $("#password-confirm-field").hide();
+            $("#name-field").hide();
+            $("#avatar-field").hide();
             $("#auth-password-confirm").removeAttr("required");
         } else {
             $("#auth-title").text("Register");
             $("#auth-submit-btn").text("Register");
             $("#toggle-auth-mode").text("Already have an account?");
             $("#password-confirm-field").show();
+            $("#name-field").show();
+            $("#avatar-field").show();
             $("#auth-password-confirm").attr("required", "true");
+            $("#auth-name").attr("required", "true");
         }
         // Clear form and messages
         $("#auth-submit-form").trigger("reset");
