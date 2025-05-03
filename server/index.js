@@ -82,6 +82,10 @@ app.post('/auth/login', async (req, res) => {
             return res.json({ status: "error", error: "Invalid username or password" });
         }
 
+        if (!bcrypt.compareSync(password, users[username].password)) {
+            return res.json({ status: "error", error: "Invalid username or password" });
+        }
+
         const user = {
             username: username,
         };

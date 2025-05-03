@@ -9,31 +9,43 @@ const Authentication = (function() {
 
     // This function sends a sign-in request to the server
     const signin = function(username, password, onSuccess, onError) {
-        const jsonData = JSON.stringify({
-            username: username,
-            password: password
-        });
-
         fetch("/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: jsonData
+            body: JSON.stringify({ username, password })
         })
-            .then((res) => {
-                if (!res.ok) throw new Error("Network response was not ok");
-                console.log("Login response:", res.json.toString());  // Check what's actually returned
-                return res.json();
-            })
-            .then((json) => {
-                if (json.success) {
-                    user = json.user;  // Store the user object
-                    if (onSuccess) onSuccess();
+            .then(async (response) => {
+                const data = await response.json();
+
+                // First check the JSON status field
+                if (data.status === "error") {
+                    throw new Error(data.error || "Invalid credentials");
                 }
+
+                // Then check HTTP status
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                // Finally check for success flag if present
+                if (data.success === false) {
+                    throw new Error(data.message || "Authentication failed");
+                }
+
+                // Store authentication data
+                localStorage.setItem('token', data.token || '');
+                localStorage.setItem('username', username);
+
+                if (onSuccess) onSuccess({ username });
             })
             .catch((error) => {
-                if (onError) onError(error.message || "Sign-in failed");
+                // Clear any authentication data on failure
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+
+                if (onError) onError(error.message || "Login failed");
             });
     };
 
