@@ -88,7 +88,36 @@
     color: #2e7d32;
     display: block;
 }
+/* Add these styles to your existing style.css */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* This adds space between all form elements */
+}
 
+.form-field {
+    margin-bottom: 20px; /* Additional spacing between fields */
+}
+
+/* If you want even more spacing between specific elements */
+#auth-username {
+    margin-bottom: 15px; /* Example of specific field spacing */
+}
+
+#auth-password {
+    margin-bottom: 15px;
+}
+
+.auth-btn {
+    margin-top: 15px; /* Extra space above the button */
+}
+
+/* Keep your existing styles and add these new ones */
+.auth-input {
+    padding: 12px;
+    /* ... your existing input styles ... */
+    margin-bottom: 0; /* Reset if needed */
+}
 /* Logout Section */
 .logout-section {
     text-align: center;

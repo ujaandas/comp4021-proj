@@ -15,12 +15,22 @@
         </div>
 
         <form id="auth-submit-form">
-            <input type="text" id="auth-username" placeholder="Username" class="auth-input" required>
-            <input type="password" id="auth-password" placeholder="Password" class="auth-input" required>
-            <div id="auth-extra-fields" style="display: none;">
+            <div class="form-field">
+                <input type="text" id="auth-username" placeholder="Username" class="auth-input" required>
+            </div>
+
+            <div class="form-field">
+                <input type="password" id="auth-password" placeholder="Password" class="auth-input" required>
+            </div>
+
+            <div id="auth-extra-fields" class="form-field" style="display: none;">
                 <!-- Additional fields for registration could go here -->
             </div>
-            <button type="submit" id="auth-submit-btn" class="auth-btn">Login</button>
+
+            <div class="form-field">
+                <button type="submit" id="auth-submit-btn" class="auth-btn">Login</button>
+            </div>
+
             <div id="auth-message" class="auth-message"></div>
         </form>
     </div>
