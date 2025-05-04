@@ -1,5 +1,6 @@
 import { Block, GhostBlock } from "../components/Block.js";
 import { Wall } from "../components/Wall.js";
+import { GNode } from "../tileset/GNode.js";
 import { Settings } from "../utils/Settings.js";
 
 export class Renderer {
@@ -34,7 +35,7 @@ export class Renderer {
     return { x: this.originX + x, y: this.originY + y };
   }
 
-  renderTiles(adj: Map<string, Wall[]>, angle: number): void {
+  renderTiles(adj: Map<string, GNode>, angle: number): void {
     adj.forEach((edges, key) => {
       const [i, j] = key.split(",").map(Number);
       const point = this.gridToScreen(i, j, 0, angle);
@@ -43,7 +44,7 @@ export class Renderer {
       this.ctx.fill();
       this.ctx.fillText(`${i},${j}`, point.x + 4, point.y - 4);
 
-      edges.forEach((edge) => {
+      edges.walls.forEach((edge) => {
         const start = this.gridToScreen(
           edge.start.i,
           edge.start.j,
