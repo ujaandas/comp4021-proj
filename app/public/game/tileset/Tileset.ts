@@ -5,6 +5,7 @@ import { Wall } from "../components/Wall.js";
 export class Tileset {
   public adj: Map<string, Wall[]> = new Map();
   private blocks: Block[] = [];
+  private placedBlocks: Block[] = [];
   private activeBlockIndex: number = 0;
   public activeBlockGhost: GhostBlock | null = null;
 
@@ -35,8 +36,8 @@ export class Tileset {
     neighbors.forEach(([ni, nj]) => {
       const neighborCoord = new Coordinate(ni, nj);
       if (this.adj.has(neighborCoord.key)) {
-        const wall = new Wall(coord, neighborCoord, 0);
-        const reverseWall = new Wall(neighborCoord, coord, 0);
+        const wall = new Wall(coord, neighborCoord, { height: 0 });
+        const reverseWall = new Wall(neighborCoord, coord, { height: 0 });
         this.adj.get(coord.key)?.push(wall);
         this.adj.get(neighborCoord.key)?.push(reverseWall);
       }
@@ -44,10 +45,14 @@ export class Tileset {
   }
 
   addBlock(block: Block): void {
-    this.blocks.push(block);
+    this.blocks.push(block); // todo: replace with algo to find matching edges and "activate" them
     if (!this.activeBlockGhost) {
       this.activeBlockGhost = new GhostBlock(block);
     }
+  }
+
+  placeBlock(block: Block): void {
+    this.placedBlocks.push(block);
   }
 
   get activeBlock(): Block | null {

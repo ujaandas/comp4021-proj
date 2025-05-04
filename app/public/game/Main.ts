@@ -4,6 +4,7 @@ import { Renderer } from "./render/Renderer.js";
 import { Tileset } from "./tileset/Tileset.js";
 import { Camera } from "./utils/Camera.js";
 import { Settings } from "./utils/Settings.js";
+import { GameTimer } from "./utils/GameTimer.js";
 
 window.onload = function () {
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -18,6 +19,17 @@ window.onload = function () {
   const renderer = new Renderer(canvas, ctx);
   const inputHandler = new InputHandler();
 
+  const gameTimer = new GameTimer(Settings.fallDelay, () => {
+    if (!tileset.activeBlock) return;
+    if (tileset.activeBlock.fallCount < Settings.fallHeight) {
+      tileset.activeBlock.walls.forEach((wall) => wall.height--);
+      tileset.activeBlock.fallCount++;
+    } else {
+      tileset.setNextActiveBlock();
+      tileset.setNextGhostBlock();
+    }
+  });
+
   inputHandler.bindDefaultCameraControls(camera);
   inputHandler.bindDefaultMovementControls(tileset);
 
@@ -30,33 +42,23 @@ window.onload = function () {
   tileset.addBlock(block3);
   tileset.addBlock(block4);
 
-  let lastFallTime = Date.now();
-
   function render() {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     renderer.renderTiles(tileset.adj, camera.angle);
 
-    const now = Date.now();
-    if (tileset.activeBlock) {
-      renderer.renderBlock(
-        tileset.activeBlock,
-        camera.angle,
-        tileset.activeBlockGhost ?? undefined
-      );
+    setInterval(() => {}, 1000);
 
-      if (now - lastFallTime >= Settings.fallDelay) {
-        if (tileset.activeBlock.fallCount < Settings.fallHeight) {
-          tileset.activeBlock.walls.forEach((wall) => wall.height--);
-          tileset.activeBlock.fallCount++;
-        } else {
-          tileset.setNextActiveBlock();
-          tileset.setNextGhostBlock();
-        }
-        lastFallTime = now;
-      }
-    }
+    if (!tileset.activeBlock) return;
+
+    renderer.renderBlockAndGhost(
+      tileset.activeBlock,
+      camera.angle,
+      tileset.activeBlockGhost ?? undefined
+    );
+
+    gameTimer.update();
 
     requestAnimationFrame(render);
   }

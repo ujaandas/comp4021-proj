@@ -64,9 +64,14 @@ export class Renderer {
     });
   }
 
-  renderBlock(block: Block, angle: number, ghost?: GhostBlock): void {
+  renderBlock(block: Block, angle: number): void {
     block.walls.forEach((wall) => this.paintWall(wall, angle));
-    ghost?.walls.forEach((wall) => this.paintWall(wall, angle));
+  }
+
+  renderBlockAndGhost(block: Block, angle: number, ghost?: GhostBlock): void {
+    this.renderBlock(block, angle);
+    if (!ghost) return;
+    this.renderBlock(ghost, angle);
   }
 
   private paintWall(wall: Wall, angle: number): void {

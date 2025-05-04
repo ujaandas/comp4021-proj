@@ -1,4 +1,3 @@
-import { Settings } from "../utils/Settings.js";
 import { Coordinate } from "./Coordinate.js";
 import { Wall } from "./Wall.js";
 
@@ -19,18 +18,18 @@ export class Block {
 
   static makeBlockOnPoint(i: number, j: number): Block {
     return new Block([
-      new Wall(
-        new Coordinate(i - 1, j),
-        new Coordinate(i, j),
-        3,
-        "rgba(255, 0, 0, 1)"
-      ),
-      new Wall(
-        new Coordinate(i, j),
-        new Coordinate(i, j - 1),
-        3,
-        "rgba(255, 0, 0, 1)"
-      ),
+      new Wall(new Coordinate(i - 1, j), new Coordinate(i, j), {
+        colour: "rgba(255, 0, 0, 1)",
+      }),
+      new Wall(new Coordinate(i, j), new Coordinate(i, j - 1), {
+        colour: "rgba(255, 0, 0, 1)",
+      }),
+      new Wall(new Coordinate(i, j - 1), new Coordinate(i - 1, j - 1), {
+        colour: "rgba(255, 0, 0, 1)",
+      }),
+      new Wall(new Coordinate(i - 1, j - 1), new Coordinate(i - 1, j), {
+        colour: "rgba(255, 0, 0, 1)",
+      }),
     ]);
   }
 
@@ -46,6 +45,13 @@ export class Block {
   clone(): Block {
     return new Block(this.walls.map((wall) => wall.clone()));
   }
+
+  getStart(): string {
+    if (this.walls.length === 4) {
+      return this.walls[1].start.key;
+    }
+    return this.walls[0].start.key;
+  }
 }
 
 export class GhostBlock extends Block {
@@ -58,7 +64,7 @@ export class GhostBlock extends Block {
 
   private applyOffset(): void {
     this.walls.forEach((wall) => {
-      wall.height -= Settings.fallHeight;
+      wall.height = 0;
       wall.colour = GhostBlock.getGhostColor(wall.colour);
     });
   }
