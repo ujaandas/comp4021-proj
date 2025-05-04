@@ -5,7 +5,7 @@ import { Wall } from "../components/Wall.js";
 export class Tileset {
   public adj: Map<string, Wall[]> = new Map();
   private blocks: Block[] = [];
-  private placedBlocks: Block[] = [];
+  private _placedBlocks: Block[] = [];
   private activeBlockIndex: number = 0;
   public activeBlockGhost: GhostBlock | null = null;
 
@@ -52,14 +52,19 @@ export class Tileset {
   }
 
   placeBlock(block: Block): void {
-    this.placedBlocks.push(block);
+    this._placedBlocks.push(block);
   }
 
   get activeBlock(): Block | null {
     return this.blocks[this.activeBlockIndex] || null;
   }
 
+  get placedBlocks(): Block[] {
+    return this._placedBlocks;
+  }
+
   setNextActiveBlock(): void {
+    this.placeBlock(this.activeBlock!);
     this.activeBlockIndex++;
   }
 

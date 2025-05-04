@@ -42,6 +42,12 @@ export class Block {
     });
   }
 
+  drop(n = 1): void {
+    this.walls.forEach((wall) => {
+      wall.height -= n;
+    });
+  }
+
   clone(): Block {
     return new Block(this.walls.map((wall) => wall.clone()));
   }

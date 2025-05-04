@@ -22,7 +22,7 @@ window.onload = function () {
   const gameTimer = new GameTimer(Settings.fallDelay, () => {
     if (!tileset.activeBlock) return;
     if (tileset.activeBlock.fallCount < Settings.fallHeight) {
-      tileset.activeBlock.walls.forEach((wall) => wall.height--);
+      tileset.activeBlock.drop(1);
       tileset.activeBlock.fallCount++;
     } else {
       tileset.setNextActiveBlock();
@@ -48,15 +48,17 @@ window.onload = function () {
 
     renderer.renderTiles(tileset.adj, camera.angle);
 
-    setInterval(() => {}, 1000);
+    tileset.placedBlocks.forEach((block) => {
+      renderer.renderBlock(block, camera.angle);
+    });
 
-    if (!tileset.activeBlock) return;
-
-    renderer.renderBlockAndGhost(
-      tileset.activeBlock,
-      camera.angle,
-      tileset.activeBlockGhost ?? undefined
-    );
+    if (tileset.activeBlock) {
+      renderer.renderBlockAndGhost(
+        tileset.activeBlock,
+        camera.angle,
+        tileset.activeBlockGhost ?? undefined
+      );
+    }
 
     gameTimer.update();
 
