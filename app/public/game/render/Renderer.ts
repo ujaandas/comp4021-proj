@@ -3,8 +3,14 @@ import { Coordinate } from "../components/Coordinate.js";
 import { GhostTetromino, Tetromino } from "../components/Tetromino.js";
 import { Wall } from "../components/Wall.js";
 import { GNode } from "../tileset/GNode.js";
-import { Colour } from "../utils/Colour.js";
 import { Settings } from "../utils/Settings.js";
+
+export interface RenderableTet {
+  tet: Tetromino;
+  ghost?: GhostTetromino;
+  isActive: boolean;
+  depth: number;
+}
 
 export class Renderer {
   private tileWidth = 100;
@@ -142,12 +148,6 @@ export class Renderer {
   }
 
   renderTets(t: Tetromino[], angle: number): void {
-    t.sort((a: Tetromino, b: Tetromino) => {
-      const aDepth = this.getTetDepth(a, angle);
-      const bDepth = this.getTetDepth(b, angle);
-      return aDepth - bDepth;
-    });
-
     t.forEach((tet) => {
       this.renderTet(tet, angle);
     });

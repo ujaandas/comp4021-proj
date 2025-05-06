@@ -1,7 +1,7 @@
 import { Block } from "./components/Block.js";
-import { Tetromino } from "./components/Tetromino.js";
+import { GhostTetromino, Tetromino } from "./components/Tetromino.js";
 import { InputHandler } from "./utils/InputHandler.js";
-import { Renderer } from "./render/Renderer.js";
+import { RenderableTet, Renderer } from "./render/Renderer.js";
 import { Tileset } from "./tileset/Tileset.js";
 import { Camera } from "./utils/Camera.js";
 import { Settings } from "./utils/Settings.js";
@@ -39,10 +39,6 @@ window.onload = function () {
   const tet2 = tet1.clone();
   const tet3 = new Tetromino([block5]);
 
-  // tileset.addBlock(block1);
-  // tileset.addBlock(block2);
-  // tileset.addBlock(block3);
-
   tileset.addTet(tet1);
   tileset.addTet(tet2);
   tileset.addTet(tet3);
@@ -55,51 +51,46 @@ window.onload = function () {
 
     renderer.renderTiles(tileset.adj, camera.angle);
 
-    // tileset.placedBlocks.forEach((block) => {
-    //   renderer.renderBlock(block, camera.angle);
-    // });
+    const renderQueue: RenderableTet[] = [];
 
-    // painter's algo
-    // tileset.placedTets.sort((a, b) => {
-    //   const aDepth = Math.max(
-    //     ...a.pos.map((point) => {
-    //       const screenPos = gridToScreen(point.i, point.j, 0, camera.angle);
-    //       return screenPos.y;
-    //     })
-    //   );
-
-    //   const bDepth = Math.max(
-    //     ...b.pos.map((point) => {
-    //       const screenPos = gridToScreen(point.i, point.j, 0, camera.angle);
-    //       return screenPos.y;
-    //     })
-    //   );
-
-    //   // Sort in ascending order, so tets with lower depth (i.e. further away) are rendered first.
-    //   return aDepth - bDepth;
-    // });
-
-    renderer.renderTets(tileset.placedTets, camera.angle);
-
-    // if (tileset.activeBlock) {
-    //   renderer.renderBlockAndGhost(
-    //     tileset.activeBlock,
-    //     camera.angle,
-    //     tileset.activeBlockGhost ?? undefined
-    //   );
-    // }
+    tileset.placedTets.forEach((tet) => {
+      renderQueue.push({
+        tet,
+        isActive: false,
+        depth: renderer.getTetDepth(tet, camera.angle),
+      });
+    });
 
     if (tileset.activeTet) {
-      renderer.renderTetAndGhost(
-        tileset.activeTet,
-        camera.angle,
-        tileset.activeTetGhost ?? undefined
-      );
+      let activeDepth = renderer.getTetDepth(tileset.activeTet, camera.angle);
+      if (tileset.activeTetGhost) {
+        const ghostDepth = renderer.getTetDepth(
+          tileset.activeTetGhost,
+          camera.angle
+        );
+        activeDepth = Math.max(activeDepth, ghostDepth);
+      }
+      renderQueue.push({
+        tet: tileset.activeTet,
+        ghost: tileset.activeTetGhost ?? undefined,
+        isActive: true,
+        depth: activeDepth,
+      });
     }
 
-    gameTimer.update();
+    renderQueue.sort((a, b) => a.depth - b.depth);
 
+    renderQueue.forEach((item) => {
+      if (item.isActive) {
+        renderer.renderTetAndGhost(item.tet, camera.angle, item.ghost);
+      } else {
+        renderer.renderTet(item.tet, camera.angle);
+      }
+    });
+
+    gameTimer.update();
     requestAnimationFrame(render);
   }
+
   render();
 };
