@@ -1,4 +1,5 @@
 import { Block } from "./components/Block.js";
+import { Tetromino } from "./components/Tetromino.js";
 import { InputHandler } from "./utils/InputHandler.js";
 import { Renderer } from "./render/Renderer.js";
 import { Tileset } from "./tileset/Tileset.js";
@@ -29,11 +30,12 @@ window.onload = function () {
   const block1 = Block.makeBlockOnPoint(5, 5);
   const block2 = Block.makeBlockOnPoint(7, 3);
   const block3 = Block.makeBlockOnPoint(7, 3);
+  const tet1 = new Tetromino([block1, block2, block3]);
   tileset.addBlock(block1);
   tileset.addBlock(block2);
   tileset.addBlock(block3);
 
-  tileset.setNextGhostBlock();
+  tileset.init();
 
   function render() {
     if (!ctx) return;
