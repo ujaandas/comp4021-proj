@@ -63,7 +63,7 @@ export class Tileset {
       this.dropActiveTet(1);
     } else {
       this.setNextActiveTet();
-      // this.setNextGhostTet();
+      this.setNextGhostTet();
     }
   }
 
@@ -181,6 +181,26 @@ export class Tileset {
     return height >= occupancy;
   }
 
+  isValidTetTranslation(i: number, j: number): boolean {
+    if (!this.activeTet) return false;
+
+    const startKeys = this.activeTet.pos;
+    const startCoords = startKeys.map((key) => this.coordinateCache.get(key));
+    if (startCoords.some((coord) => !coord)) return false;
+
+    return startCoords.every((coord) => {
+      const newI = coord!.i + i;
+      const newJ = coord!.j + j;
+
+      if (this.isBlockOutOfBounds(newI, newJ)) return false;
+
+      const height = this.activeTet?.height || 0;
+      const occupancy = this.getOccupancy(newI, newJ);
+
+      return height >= occupancy;
+    });
+  }
+
   translateActiveBlock(di: number, dj: number): void {
     if (!this.activeBlock || !this.isValidBlockTranslation(di, dj)) return;
 
@@ -196,7 +216,7 @@ export class Tileset {
   }
 
   translateActiveTet(di: number, dj: number): void {
-    if (!this.activeTet) return;
+    if (!this.activeTet || !this.isValidTetTranslation(di, dj)) return;
 
     this.activeTet.translate(di, dj);
 
@@ -276,7 +296,7 @@ export class Tileset {
 
   freezeActiveTet(): void {
     this.setNextActiveTet();
-    // this.setNextGhostTet();
+    this.setNextGhostTet();
   }
 
   placeBlock(block: Block): void {
@@ -305,11 +325,13 @@ export class Tileset {
 
   private setNextActiveTet(): void {
     if (!this.activeTet) return;
+    console.log("Next tet!");
     this.placeTet(this.activeTet);
     this.activeTetIndex++;
   }
 
   private setNextGhostBlock(): void {
+    if (!this.activeBlock) return;
     const start = this.activeBlock?.pos;
     const occupancy = this.getOccupancyByKey(start!);
     if (this.activeBlock) {
@@ -318,6 +340,7 @@ export class Tileset {
   }
 
   private setNextGhostTet(): void {
+    if (!this.activeTet) return;
     const start = this.activeTet?.pos;
     const occupancies = start!.map((key) => this.getOccupancyByKey(key));
     const maxOccupancy = Math.max(...occupancies);

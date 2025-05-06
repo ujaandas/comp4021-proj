@@ -32,12 +32,14 @@ window.onload = function () {
   const block3 = Block.makeBlockOnPoint(6, 4);
 
   const tet1 = new Tetromino([block1, block2, block3]);
+  const tet2 = tet1.clone();
 
   // tileset.addBlock(block1);
   // tileset.addBlock(block2);
   // tileset.addBlock(block3);
 
   tileset.addTet(tet1);
+  tileset.addTet(tet2);
 
   tileset.initTetMode();
 
