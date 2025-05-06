@@ -20,14 +20,7 @@ window.onload = function () {
   const inputHandler = new InputHandler();
 
   const gameTimer = new GameTimer(Settings.fallDelay, () => {
-    if (!tileset.activeBlock) return;
-    if (tileset.activeBlock.fallCount < Settings.fallHeight) {
-      tileset.activeBlock.drop(1);
-      tileset.activeBlock.fallCount++;
-    } else {
-      tileset.setNextActiveBlock();
-      tileset.setNextGhostBlock();
-    }
+    tileset.play();
   });
 
   inputHandler.bindDefaultCameraControls(camera);
@@ -35,12 +28,12 @@ window.onload = function () {
 
   const block1 = Block.makeBlockOnPoint(5, 5);
   const block2 = Block.makeBlockOnPoint(7, 3);
-  const block3 = Block.makeBlockOnPoint(8, 0);
-  const block4 = Block.makeBlockOnPoint(5, 5);
+  const block3 = Block.makeBlockOnPoint(7, 3);
   tileset.addBlock(block1);
   tileset.addBlock(block2);
   tileset.addBlock(block3);
-  tileset.addBlock(block4);
+
+  tileset.setNextGhostBlock();
 
   function render() {
     if (!ctx) return;

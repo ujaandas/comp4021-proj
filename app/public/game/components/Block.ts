@@ -52,7 +52,7 @@ export class Block {
     return new Block(this.walls.map((wall) => wall.clone()));
   }
 
-  getStart(): string {
+  getPos(): string {
     if (this.walls.length === 4) {
       return this.walls[1].start.key;
     }

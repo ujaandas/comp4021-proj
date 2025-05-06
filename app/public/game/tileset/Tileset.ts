@@ -1,11 +1,13 @@
 import { Block, GhostBlock } from "../components/Block.js";
 import { Coordinate } from "../components/Coordinate.js";
 import { Wall } from "../components/Wall.js";
+import { Settings } from "../utils/Settings.js";
 import { GNode } from "./GNode.js";
 
 export class Tileset {
   public adj: Map<string, GNode> = new Map();
   private coordinateCache: Map<string, Coordinate> = new Map();
+  public occupancy: Map<string, number> = new Map();
   private blocks: Block[] = [];
   private _placedBlocks: Block[] = [];
   private activeBlockIndex: number = 0;
@@ -13,6 +15,14 @@ export class Tileset {
 
   constructor(private width: number, private height: number) {
     this.initializeGraph();
+  }
+
+  get activeBlock(): Block | null {
+    return this.blocks[this.activeBlockIndex] || null;
+  }
+
+  get placedBlocks(): Block[] {
+    return this._placedBlocks;
   }
 
   private initializeGraph(): void {
@@ -81,7 +91,7 @@ export class Tileset {
 
   isValidTranslation(i: number, j: number): boolean {
     if (!this.activeBlock) return false;
-    const start = this.activeBlock.getStart();
+    const start = this.activeBlock.getPos();
     const startCoord = this.coordinateCache.get(start);
     if (!startCoord) return false;
 
@@ -92,7 +102,7 @@ export class Tileset {
     if (newI <= 0 || newI >= this.width || newJ <= 0 || newJ >= this.height) {
       return false;
     }
-    // todo: check that new coord is not occupied
+
     return true;
   }
 
@@ -103,35 +113,70 @@ export class Tileset {
     this.activeBlockGhost?.translate(di, dj);
   }
 
+  isValidDrop(n: number): boolean {
+    if (!this.activeBlock) return false;
+    const projectedKey = this.activeBlock.getPos();
+    const projectedNode = this.coordinateCache.get(projectedKey);
+    if (!projectedNode) return false;
+
+    const occupancy = this.occupancy.get(projectedKey) || 0;
+    const height = this.activeBlock.walls[0].height;
+    console.log(`curr height: ${height} vs occupancy: ${occupancy}`);
+
+    return height - 1 >= occupancy;
+  }
+
+  dropActiveBlock(n: number): void {
+    if (!this.activeBlock) return;
+    if (!this.isValidDrop(n)) this.freezeActiveBlock();
+
+    this.activeBlock.drop(n);
+    this.activeBlock.fallCount += n;
+  }
+
   addBlock(block: Block): void {
     this.blocks.push(block);
-    if (!this.activeBlockGhost) {
-      this.activeBlockGhost = new GhostBlock(block);
-    }
+  }
+
+  freezeActiveBlock(): void {
+    this.setNextActiveBlock();
+    this.setNextGhostBlock();
   }
 
   placeBlock(block: Block): void {
+    const projectedKey = block.getPos();
+    const projectedNode = this.coordinateCache.get(projectedKey);
+    if (!projectedNode) return;
+
+    const occupancy = this.occupancy.get(projectedKey) || 0;
+    this.occupancy.set(projectedKey, occupancy + 1);
+
+    console.log(
+      `Placed block at ${projectedKey} with occupancy ${occupancy + 1}`
+    );
+
     this._placedBlocks.push(block);
   }
 
-  get activeBlock(): Block | null {
-    return this.blocks[this.activeBlockIndex] || null;
-  }
-
-  get placedBlocks(): Block[] {
-    return this._placedBlocks;
-  }
-
   setNextActiveBlock(): void {
-    if (this.activeBlock) {
-      this.placeBlock(this.activeBlock);
-      this.activeBlockIndex++;
-    }
+    if (!this.activeBlock) return;
+    this.placeBlock(this.activeBlock);
+    this.activeBlockIndex++;
   }
 
   setNextGhostBlock(): void {
-    if (this.activeBlock) {
-      this.activeBlockGhost = new GhostBlock(this.activeBlock);
+    if (!this.activeBlock) return;
+    this.activeBlockGhost = new GhostBlock(this.activeBlock);
+  }
+
+  play(): void {
+    if (!this.activeBlock) return;
+
+    if (this.activeBlock.fallCount < Settings.fallHeight) {
+      this.dropActiveBlock(1);
+    } else {
+      this.setNextActiveBlock();
+      this.setNextGhostBlock();
     }
   }
 }
