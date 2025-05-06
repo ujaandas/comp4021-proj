@@ -63,22 +63,22 @@ export class Block {
 export class GhostBlock extends Block {
   private static readonly TRANSPARENCY = 0.5;
 
-  constructor(public block: Block) {
+  constructor(public block: Block, private height: number = 0) {
     super(block.walls.map((wall) => wall.clone()));
     this.applyOffset();
   }
 
   private applyOffset(): void {
     this.walls.forEach((wall) => {
-      wall.height = 0;
+      wall.height = this.height;
       wall.colour = GhostBlock.getGhostColor(wall.colour);
     });
   }
 
   setHeight(n: number): void {
-      this.walls.forEach((wall) => {
-          wall.height = n;
-      });
+    this.walls.forEach((wall) => {
+      wall.height = n;
+    });
   }
 
   static getGhostColor(color: string): string {

@@ -201,8 +201,10 @@ export class Tileset {
   }
 
   private setNextGhostBlock(): void {
+    const start = this.activeBlock?.getPos();
+    const occupancy = this.getOccupancyByKey(start!);
     if (this.activeBlock) {
-      this.activeBlockGhost = new GhostBlock(this.activeBlock);
+      this.activeBlockGhost = new GhostBlock(this.activeBlock, occupancy);
     }
   }
 
