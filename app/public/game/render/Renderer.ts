@@ -33,9 +33,16 @@ export class Renderer {
     angle: number
   ): { x: number; y: number } {
     const rad = (angle * Math.PI) / 180;
-    const hOffset = h * this.tileHeight;
-    const rotatedI = i * Math.cos(rad) - j * Math.sin(rad);
-    const rotatedJ = i * Math.sin(rad) + j * Math.cos(rad);
+    const hOffset = h * this.tileHeight - 100;
+    const translatedI = i - Settings.mapWidth / 2;
+    const translatedJ = j - Settings.mapHeight / 2;
+
+    console.log(
+      `Spinning around ${translatedI},${translatedJ} with angle ${angle}`
+    );
+
+    const rotatedI = translatedI * Math.cos(rad) - translatedJ * Math.sin(rad);
+    const rotatedJ = translatedI * Math.sin(rad) + translatedJ * Math.cos(rad);
 
     const x = ((rotatedI - rotatedJ) * this.tileWidth) / 2;
     const y =
@@ -113,7 +120,7 @@ export class Renderer {
     this.ctx.lineTo(end.x, end.y - Settings.blockHeight);
     this.ctx.lineTo(end.x, end.y);
     this.ctx.closePath();
-    this.ctx.fillStyle = gradient;
+    this.ctx.fillStyle = wall.colour.toString();
     this.ctx.fill();
     // this.ctx.strokeStyle = wall.colour.darken(0.8).toString();
     // this.ctx.stroke();
