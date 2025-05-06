@@ -4,7 +4,7 @@ import { Camera } from "./Camera.js";
 export class InputHandler {
   private keyActions: Map<string, () => void> = new Map();
 
-  constructor() {
+  constructor(private camera: Camera, private tileset: Tileset) {
     window.addEventListener("keydown", (e) => {
       const action = this.keyActions.get(e.key.toLowerCase());
       if (action) action();
@@ -15,34 +15,30 @@ export class InputHandler {
     this.keyActions.set(key.toLowerCase(), action);
   }
 
-  bindDefaultCameraControls(camera: Camera): void {
+  bindDefaultCameraControls(): void {
     this.bindKey("arrowleft", () => {
-      camera.spinClockwise();
+      this.camera.spinCounterClockwise();
     });
     this.bindKey("arrowright", () => {
-      camera.spinCounterClockwise();
+      this.camera.spinClockwise();
     });
   }
 
-  bindDefaultMovementControls(tileset: Tileset): void {
+  bindDefaultMovementControls(): void {
     this.bindKey("w", () => {
-      // tileset.translateActiveBlock(-1, -1);
-      tileset.translateActiveTet(-1, -1);
+      this.tileset.translateActiveTet(1, 0);
     });
 
     this.bindKey("a", () => {
-      // tileset.translateActiveBlock(-1, 1);
-      tileset.translateActiveTet(-1, 1);
+      this.tileset.translateActiveTet(0, -1);
     });
 
     this.bindKey("s", () => {
-      // tileset.translateActiveBlock(1, 1);
-      tileset.translateActiveTet(1, 1);
+      this.tileset.translateActiveTet(-1, 0);
     });
 
     this.bindKey("d", () => {
-      // tileset.translateActiveBlock(1, -1);
-      tileset.translateActiveTet(1, -1);
+      this.tileset.translateActiveTet(0, 1);
     });
   }
 }

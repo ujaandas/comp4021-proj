@@ -3,7 +3,7 @@ export class Camera {
   private readonly step: number = 4;
 
   constructor() {
-    this._angle = 0;
+    this._angle = 225;
   }
 
   spinClockwise(): void {

@@ -18,14 +18,14 @@ window.onload = function () {
   const tileset = new Tileset(Settings.mapHeight, Settings.mapWidth);
   const camera = new Camera();
   const renderer = new Renderer(canvas, ctx);
-  const inputHandler = new InputHandler();
+  const inputHandler = new InputHandler(camera, tileset);
 
   const gameTimer = new GameTimer(Settings.fallDelay, () => {
     tileset.playTetMode();
   });
 
-  inputHandler.bindDefaultCameraControls(camera);
-  inputHandler.bindDefaultMovementControls(tileset);
+  inputHandler.bindDefaultCameraControls();
+  inputHandler.bindDefaultMovementControls();
 
   const block1 = Block.makeBlockOnPoint(5, 5);
   const block2 = Block.makeBlockOnPoint(5, 4);
@@ -40,8 +40,8 @@ window.onload = function () {
   const tet3 = new Tetromino([block5]);
 
   tileset.addTet(tet1);
-  tileset.addTet(tet2);
-  tileset.addTet(tet3);
+  // tileset.addTet(tet2);
+  // tileset.addTet(tet3);
 
   tileset.initTetMode();
 

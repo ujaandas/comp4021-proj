@@ -37,10 +37,6 @@ export class Renderer {
     const translatedI = i - Settings.mapWidth / 2;
     const translatedJ = j - Settings.mapHeight / 2;
 
-    console.log(
-      `Spinning around ${translatedI},${translatedJ} with angle ${angle}`
-    );
-
     const rotatedI = translatedI * Math.cos(rad) - translatedJ * Math.sin(rad);
     const rotatedJ = translatedI * Math.sin(rad) + translatedJ * Math.cos(rad);
 
