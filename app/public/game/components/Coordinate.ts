@@ -5,6 +5,11 @@ export class Coordinate {
     return `${i},${j}`;
   }
 
+  static fromKey(key: string): Coordinate {
+    const [i, j] = key.split(",").map(Number);
+    return new Coordinate(i, j);
+  }
+
   get key(): string {
     return Coordinate.makeKey(this.i, this.j);
   }

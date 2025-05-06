@@ -1,4 +1,5 @@
 import { Block, GhostBlock } from "../components/Block.js";
+import { Coordinate } from "../components/Coordinate.js";
 import { GhostTetromino, Tetromino } from "../components/Tetromino.js";
 import { Wall } from "../components/Wall.js";
 import { GNode } from "../tileset/GNode.js";
@@ -129,5 +130,26 @@ export class Renderer {
     this.ctx.fill();
     // this.ctx.strokeStyle = block.walls[0].colour.darken(0.8).toString();
     // this.ctx.stroke();
+  }
+
+  getTetDepth(tet: Tetromino, cameraAngle: number): number {
+    const depths = tet.pos.map((posKey) => {
+      const pos = Coordinate.fromKey(posKey);
+      const screenPos = this.gridToScreen(pos.i, pos.j, 0, cameraAngle);
+      return screenPos.y;
+    });
+    return Math.max(...depths);
+  }
+
+  renderTets(t: Tetromino[], angle: number): void {
+    t.sort((a: Tetromino, b: Tetromino) => {
+      const aDepth = this.getTetDepth(a, angle);
+      const bDepth = this.getTetDepth(b, angle);
+      return aDepth - bDepth;
+    });
+
+    t.forEach((tet) => {
+      this.renderTet(tet, angle);
+    });
   }
 }

@@ -59,9 +59,27 @@ window.onload = function () {
     //   renderer.renderBlock(block, camera.angle);
     // });
 
-    tileset.placedTets.forEach((tet) => {
-      renderer.renderTet(tet, camera.angle);
-    });
+    // painter's algo
+    // tileset.placedTets.sort((a, b) => {
+    //   const aDepth = Math.max(
+    //     ...a.pos.map((point) => {
+    //       const screenPos = gridToScreen(point.i, point.j, 0, camera.angle);
+    //       return screenPos.y;
+    //     })
+    //   );
+
+    //   const bDepth = Math.max(
+    //     ...b.pos.map((point) => {
+    //       const screenPos = gridToScreen(point.i, point.j, 0, camera.angle);
+    //       return screenPos.y;
+    //     })
+    //   );
+
+    //   // Sort in ascending order, so tets with lower depth (i.e. further away) are rendered first.
+    //   return aDepth - bDepth;
+    // });
+
+    renderer.renderTets(tileset.placedTets, camera.angle);
 
     // if (tileset.activeBlock) {
     //   renderer.renderBlockAndGhost(

@@ -1,4 +1,5 @@
 import { Block, GhostBlock } from "./Block.js";
+import { Coordinate } from "./Coordinate.js";
 
 export class Tetromino {
   public fallCount: number = 0;
