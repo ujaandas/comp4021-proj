@@ -21,21 +21,25 @@ window.onload = function () {
   const inputHandler = new InputHandler();
 
   const gameTimer = new GameTimer(Settings.fallDelay, () => {
-    tileset.play();
+    tileset.playTetMode();
   });
 
   inputHandler.bindDefaultCameraControls(camera);
   inputHandler.bindDefaultMovementControls(tileset);
 
   const block1 = Block.makeBlockOnPoint(5, 5);
-  const block2 = Block.makeBlockOnPoint(7, 3);
-  const block3 = Block.makeBlockOnPoint(7, 3);
-  const tet1 = new Tetromino([block1, block2, block3]);
-  tileset.addBlock(block1);
-  tileset.addBlock(block2);
-  tileset.addBlock(block3);
+  const block2 = Block.makeBlockOnPoint(5, 4);
+  const block3 = Block.makeBlockOnPoint(6, 4);
 
-  tileset.init();
+  const tet1 = new Tetromino([block1, block2, block3]);
+
+  // tileset.addBlock(block1);
+  // tileset.addBlock(block2);
+  // tileset.addBlock(block3);
+
+  tileset.addTet(tet1);
+
+  tileset.initTetMode();
 
   function render() {
     if (!ctx) return;
@@ -43,15 +47,27 @@ window.onload = function () {
 
     renderer.renderTiles(tileset.adj, camera.angle);
 
-    tileset.placedBlocks.forEach((block) => {
-      renderer.renderBlock(block, camera.angle);
+    // tileset.placedBlocks.forEach((block) => {
+    //   renderer.renderBlock(block, camera.angle);
+    // });
+
+    tileset.placedTets.forEach((tet) => {
+      renderer.renderTet(tet, camera.angle);
     });
 
-    if (tileset.activeBlock) {
-      renderer.renderBlockAndGhost(
-        tileset.activeBlock,
+    // if (tileset.activeBlock) {
+    //   renderer.renderBlockAndGhost(
+    //     tileset.activeBlock,
+    //     camera.angle,
+    //     tileset.activeBlockGhost ?? undefined
+    //   );
+    // }
+
+    if (tileset.activeTet) {
+      renderer.renderTetAndGhost(
+        tileset.activeTet,
         camera.angle,
-        tileset.activeBlockGhost ?? undefined
+        tileset.activeTetGhost ?? undefined
       );
     }
 

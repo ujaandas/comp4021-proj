@@ -26,19 +26,23 @@ export class InputHandler {
 
   bindDefaultMovementControls(tileset: Tileset): void {
     this.bindKey("w", () => {
-      tileset.translateActiveBlock(-1, -1);
+      // tileset.translateActiveBlock(-1, -1);
+      tileset.translateActiveTet(-1, -1);
     });
 
     this.bindKey("a", () => {
-      tileset.translateActiveBlock(-1, 1);
+      // tileset.translateActiveBlock(-1, 1);
+      tileset.translateActiveTet(-1, 1);
     });
 
     this.bindKey("s", () => {
-      tileset.translateActiveBlock(1, 1);
+      // tileset.translateActiveBlock(1, 1);
+      tileset.translateActiveTet(1, 1);
     });
 
     this.bindKey("d", () => {
-      tileset.translateActiveBlock(1, -1);
+      // tileset.translateActiveBlock(1, -1);
+      tileset.translateActiveTet(1, -1);
     });
   }
 }

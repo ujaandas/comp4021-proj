@@ -1,4 +1,5 @@
 import { Block, GhostBlock } from "../components/Block.js";
+import { GhostTetromino, Tetromino } from "../components/Tetromino.js";
 import { Wall } from "../components/Wall.js";
 import { GNode } from "../tileset/GNode.js";
 import { Settings } from "../utils/Settings.js";
@@ -69,10 +70,24 @@ export class Renderer {
     block.walls.forEach((wall) => this.paintWall(wall, angle));
   }
 
+  renderTet(tet: Tetromino, angle: number): void {
+    tet.blocks.forEach((block) => this.renderBlock(block, angle));
+  }
+
   renderBlockAndGhost(block: Block, angle: number, ghost?: GhostBlock): void {
     this.renderBlock(block, angle);
     if (!ghost) return;
     this.renderBlock(ghost, angle);
+  }
+
+  renderTetAndGhost(
+    tet: Tetromino,
+    angle: number,
+    ghost?: GhostTetromino
+  ): void {
+    this.renderTet(tet, angle);
+    if (!ghost) return;
+    this.renderTet(ghost, angle);
   }
 
   private paintWall(wall: Wall, angle: number): void {

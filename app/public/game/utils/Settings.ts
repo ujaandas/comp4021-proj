@@ -4,6 +4,6 @@ export class Settings {
   static readonly gameWidthOffset = 0;
   static readonly gameHeightOffset = -150;
   static readonly blockHeight = 50;
-  static readonly fallHeight = 5;
+  static readonly fallHeight = 3;
   static readonly fallDelay = 1000;
 }

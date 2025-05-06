@@ -1,5 +1,6 @@
 import { Block, GhostBlock } from "../components/Block.js";
 import { Coordinate } from "../components/Coordinate.js";
+import { GhostTetromino, Tetromino } from "../components/Tetromino.js";
 import { Wall } from "../components/Wall.js";
 import { Settings } from "../utils/Settings.js";
 import { GNode } from "./GNode.js";
@@ -8,9 +9,13 @@ export class Tileset {
   public adj: Map<string, GNode> = new Map();
   private coordinateCache: Map<string, Coordinate> = new Map();
   private blocks: Block[] = [];
+  private tets: Tetromino[] = [];
   private _placedBlocks: Block[] = [];
+  private _placedTets: Tetromino[] = [];
   private activeBlockIndex: number = 0;
+  private activeTetIndex: number = 0;
   public activeBlockGhost: GhostBlock | null = null;
+  public activeTetGhost: GhostTetromino | null = null;
 
   constructor(private width: number, private height: number) {
     this.initializeGraph();
@@ -20,8 +25,46 @@ export class Tileset {
     return this.blocks[this.activeBlockIndex] || null;
   }
 
+  get activeTet(): Tetromino | null {
+    return this.tets[this.activeTetIndex] || null;
+  }
+
   get placedBlocks(): Block[] {
     return this._placedBlocks;
+  }
+
+  get placedTets(): Tetromino[] {
+    return this._placedTets;
+  }
+
+  initBlockMode(): void {
+    this.setNextGhostBlock();
+  }
+
+  initTetMode(): void {
+    this.setNextGhostTet();
+  }
+
+  playBlockMode(): void {
+    if (!this.activeBlock) return;
+
+    if (this.activeBlock.fallCount < Settings.fallHeight) {
+      this.dropActiveBlock(1);
+    } else {
+      this.setNextActiveBlock();
+      this.setNextGhostBlock();
+    }
+  }
+
+  playTetMode(): void {
+    if (!this.activeTet) return;
+
+    if (this.activeTet.fallCount < Settings.fallHeight) {
+      this.dropActiveTet(1);
+    } else {
+      this.setNextActiveTet();
+      // this.setNextGhostTet();
+    }
   }
 
   private initializeGraph(): void {
@@ -120,10 +163,10 @@ export class Tileset {
     }
   }
 
-  isValidTranslation(i: number, j: number): boolean {
+  isValidBlockTranslation(i: number, j: number): boolean {
     if (!this.activeBlock) return false;
 
-    const startKey = this.activeBlock.getPos();
+    const startKey = this.activeBlock.pos;
     const startCoord = this.coordinateCache.get(startKey);
     if (!startCoord) return false;
 
@@ -139,11 +182,11 @@ export class Tileset {
   }
 
   translateActiveBlock(di: number, dj: number): void {
-    if (!this.activeBlock || !this.isValidTranslation(di, dj)) return;
+    if (!this.activeBlock || !this.isValidBlockTranslation(di, dj)) return;
 
     this.activeBlock.translate(di, dj);
 
-    const startKey = this.activeBlock.getPos();
+    const startKey = this.activeBlock.pos;
     const occupancy = this.getOccupancyByKey(startKey);
 
     if (this.activeBlockGhost) {
@@ -152,10 +195,25 @@ export class Tileset {
     }
   }
 
-  isValidDrop(n: number): boolean {
+  translateActiveTet(di: number, dj: number): void {
+    if (!this.activeTet) return;
+
+    this.activeTet.translate(di, dj);
+
+    const startKeys = this.activeTet.pos;
+    const occupancies = startKeys.map((key) => this.getOccupancyByKey(key));
+    const maxOccupancy = Math.max(...occupancies);
+
+    if (this.activeTetGhost) {
+      this.activeTetGhost.translate(di, dj);
+      this.activeTetGhost.setHeight(maxOccupancy);
+    }
+  }
+
+  isValidBlockDrop(n: number): boolean {
     if (!this.activeBlock) return false;
 
-    const projectedKey = this.activeBlock.getPos();
+    const projectedKey = this.activeBlock.pos;
     const projectedNode = this.coordinateCache.get(projectedKey);
     if (!projectedNode) return false;
 
@@ -165,10 +223,22 @@ export class Tileset {
     return height >= occupancy;
   }
 
+  isValidTetDrop(n: number): boolean {
+    if (!this.activeTet) return false;
+
+    const projectedKeys = this.activeTet.pos;
+    const occupancies = projectedKeys.map((key) => this.getOccupancyByKey(key));
+
+    return this.activeTet.blocks.every((block, index) => {
+      const height = block.walls[0].height - 1;
+      return height >= occupancies[index];
+    });
+  }
+
   dropActiveBlock(n: number): void {
     if (!this.activeBlock) return;
 
-    if (!this.isValidDrop(n)) {
+    if (!this.isValidBlockDrop(n)) {
       this.freezeActiveBlock();
       return;
     }
@@ -177,8 +247,26 @@ export class Tileset {
     this.activeBlock.fallCount += n;
   }
 
+  dropActiveTet(n: number): void {
+    if (!this.activeTet) return;
+
+    this.activeTet.blocks.forEach((block) => {
+      block.drop(n);
+      block.fallCount += n;
+    });
+
+    if (!this.isValidTetDrop(n)) {
+      this.freezeActiveTet();
+      return;
+    }
+  }
+
   addBlock(block: Block): void {
     this.blocks.push(block);
+  }
+
+  addTet(tet: Tetromino): void {
+    this.tets.push(tet);
   }
 
   freezeActiveBlock(): void {
@@ -186,12 +274,27 @@ export class Tileset {
     this.setNextGhostBlock();
   }
 
+  freezeActiveTet(): void {
+    this.setNextActiveTet();
+    // this.setNextGhostTet();
+  }
+
   placeBlock(block: Block): void {
-    const projectedKey = block.getPos();
+    const projectedKey = block.pos;
     const occupancy = this.getOccupancyByKey(projectedKey);
 
     this.setOccupancy(projectedKey, occupancy + 1);
     this._placedBlocks.push(block);
+  }
+
+  placeTet(tet: Tetromino): void {
+    const projectedKeys = tet.pos;
+    const occupied = projectedKeys.map((key) => this.getOccupancyByKey(key));
+
+    occupied.forEach((occupancy, index) => {
+      this.setOccupancy(projectedKeys[index], occupancy + 1);
+    });
+    this._placedTets.push(tet);
   }
 
   private setNextActiveBlock(): void {
@@ -200,26 +303,26 @@ export class Tileset {
     this.activeBlockIndex++;
   }
 
+  private setNextActiveTet(): void {
+    if (!this.activeTet) return;
+    this.placeTet(this.activeTet);
+    this.activeTetIndex++;
+  }
+
   private setNextGhostBlock(): void {
-    const start = this.activeBlock?.getPos();
+    const start = this.activeBlock?.pos;
     const occupancy = this.getOccupancyByKey(start!);
     if (this.activeBlock) {
       this.activeBlockGhost = new GhostBlock(this.activeBlock, occupancy);
     }
   }
 
-  init(): void {
-    this.setNextGhostBlock();
-  }
-
-  play(): void {
-    if (!this.activeBlock) return;
-
-    if (this.activeBlock.fallCount < Settings.fallHeight) {
-      this.dropActiveBlock(1);
-    } else {
-      this.setNextActiveBlock();
-      this.setNextGhostBlock();
+  private setNextGhostTet(): void {
+    const start = this.activeTet?.pos;
+    const occupancies = start!.map((key) => this.getOccupancyByKey(key));
+    const maxOccupancy = Math.max(...occupancies);
+    if (this.activeTet) {
+      this.activeTetGhost = new GhostTetromino(this.activeTet, maxOccupancy);
     }
   }
 }
