@@ -3,6 +3,7 @@ import { Coordinate } from "../components/Coordinate.js";
 import { GhostTetromino, Tetromino } from "../components/Tetromino.js";
 import { Wall } from "../components/Wall.js";
 import { Settings } from "../utils/Settings.js";
+import { GEdge } from "./GEdge.js";
 import { GNode } from "./GNode.js";
 
 export class Tileset {
@@ -19,52 +20,6 @@ export class Tileset {
 
   constructor(private width: number, private height: number) {
     this.initializeGraph();
-  }
-
-  get activeBlock(): Block | null {
-    return this.blocks[this.activeBlockIndex] || null;
-  }
-
-  get activeTet(): Tetromino | null {
-    return this.tets[this.activeTetIndex] || null;
-  }
-
-  get placedBlocks(): Block[] {
-    return this._placedBlocks;
-  }
-
-  get placedTets(): Tetromino[] {
-    return this._placedTets;
-  }
-
-  initBlockMode(): void {
-    this.setNextGhostBlock();
-  }
-
-  initTetMode(): void {
-    this.setNextGhostTet();
-  }
-
-  playBlockMode(): void {
-    if (!this.activeBlock) return;
-
-    if (this.activeBlock.fallCount < Settings.fallHeight) {
-      this.dropActiveBlock(1);
-    } else {
-      this.setNextActiveBlock();
-      this.setNextGhostBlock();
-    }
-  }
-
-  playTetMode(): void {
-    if (!this.activeTet) return;
-
-    if (this.activeTet.fallCount < Settings.fallHeight) {
-      this.dropActiveTet(1);
-    } else {
-      this.setNextActiveTet();
-      this.setNextGhostTet();
-    }
   }
 
   private initializeGraph(): void {
@@ -129,10 +84,8 @@ export class Tileset {
   }
 
   private createWallsBetweenNodes(nodeA: GNode, nodeB: GNode): void {
-    const wall = new Wall(nodeA.coordinate, nodeB.coordinate, { height: 0 });
-    const reverseWall = new Wall(nodeB.coordinate, nodeA.coordinate, {
-      height: 0,
-    });
+    const wall = new GEdge(nodeA.coordinate, nodeB.coordinate);
+    const reverseWall = new GEdge(nodeB.coordinate, nodeA.coordinate);
 
     nodeA.walls.push(wall);
     nodeB.walls.push(reverseWall);
@@ -140,6 +93,52 @@ export class Tileset {
 
   private isTileOutOfBounds(i: number, j: number): boolean {
     return i < 0 || i >= this.width || j < 0 || j >= this.height;
+  }
+
+  get activeBlock(): Block | null {
+    return this.blocks[this.activeBlockIndex] || null;
+  }
+
+  get activeTet(): Tetromino | null {
+    return this.tets[this.activeTetIndex] || null;
+  }
+
+  get placedBlocks(): Block[] {
+    return this._placedBlocks;
+  }
+
+  get placedTets(): Tetromino[] {
+    return this._placedTets;
+  }
+
+  initBlockMode(): void {
+    this.setNextGhostBlock();
+  }
+
+  initTetMode(): void {
+    this.setNextGhostTet();
+  }
+
+  playBlockMode(): void {
+    if (!this.activeBlock) return;
+
+    if (this.activeBlock.fallCount < Settings.fallHeight) {
+      this.dropActiveBlock(1);
+    } else {
+      this.setNextActiveBlock();
+      this.setNextGhostBlock();
+    }
+  }
+
+  playTetMode(): void {
+    if (!this.activeTet) return;
+
+    if (this.activeTet.fallCount < Settings.fallHeight) {
+      this.dropActiveTet(1);
+    } else {
+      this.setNextActiveTet();
+      this.setNextGhostTet();
+    }
   }
 
   private isBlockOutOfBounds(i: number, j: number): boolean {
@@ -175,7 +174,7 @@ export class Tileset {
 
     if (this.isBlockOutOfBounds(newI, newJ)) return false;
 
-    const height = this.activeBlock.walls[0].height;
+    const height = this.activeBlock.height;
     const occupancy = this.getOccupancy(newI, newJ);
 
     return height >= occupancy;
@@ -238,7 +237,7 @@ export class Tileset {
     if (!projectedNode) return false;
 
     const occupancy = this.getOccupancyByKey(projectedKey);
-    const height = this.activeBlock.walls[0].height - 1;
+    const height = this.activeBlock.height - 1;
 
     return height >= occupancy;
   }
@@ -250,7 +249,7 @@ export class Tileset {
     const occupancies = projectedKeys.map((key) => this.getOccupancyByKey(key));
 
     return this.activeTet.blocks.every((block, index) => {
-      const height = block.walls[0].height - 1;
+      const height = block.height - 1;
       return height >= occupancies[index];
     });
   }
@@ -270,10 +269,7 @@ export class Tileset {
   dropActiveTet(n: number): void {
     if (!this.activeTet) return;
 
-    this.activeTet.blocks.forEach((block) => {
-      block.drop(n);
-      block.fallCount += n;
-    });
+    this.activeTet.drop(n);
 
     if (!this.isValidTetDrop(n)) {
       this.freezeActiveTet();
@@ -325,7 +321,6 @@ export class Tileset {
 
   private setNextActiveTet(): void {
     if (!this.activeTet) return;
-    console.log("Next tet!");
     this.placeTet(this.activeTet);
     this.activeTetIndex++;
   }

@@ -1,7 +1,16 @@
+import { Colour } from "../utils/Colour.js";
 import { Coordinate } from "./Coordinate.js";
 import { Wall } from "./Wall.js";
 
 export class Block {
+  public fallCount: number = 0;
+  public colour: Colour = Colour.getColour("red");
+  public height: number;
+
+  constructor(private _walls: Wall[]) {
+    this.height = Math.min(...this._walls.map((wall) => wall.height));
+  }
+
   public get walls(): Wall[] {
     return this._walls;
   }
@@ -10,26 +19,27 @@ export class Block {
     this._walls = value;
   }
 
-  public fallCount: number = 0;
-
-  constructor(private _walls: Wall[]) {
-    this._walls = _walls.map((wall) => wall.clone());
-  }
-
-  static makeBlockOnPoint(i: number, j: number): Block {
+  static makeBlockOnPoint(
+    i: number,
+    j: number,
+    height?: number,
+    colour?: Colour
+  ): Block {
     return new Block([
-      new Wall(new Coordinate(i - 1, j), new Coordinate(i, j), {
-        colour: "rgba(255, 0, 0, 1)",
-      }),
-      new Wall(new Coordinate(i, j), new Coordinate(i, j - 1), {
-        colour: "rgba(255, 0, 0, 1)",
-      }),
-      new Wall(new Coordinate(i, j - 1), new Coordinate(i - 1, j - 1), {
-        colour: "rgba(255, 0, 0, 1)",
-      }),
-      new Wall(new Coordinate(i - 1, j - 1), new Coordinate(i - 1, j), {
-        colour: "rgba(255, 0, 0, 1)",
-      }),
+      new Wall(new Coordinate(i - 1, j), new Coordinate(i, j), height, colour),
+      new Wall(new Coordinate(i, j), new Coordinate(i, j - 1), height, colour),
+      new Wall(
+        new Coordinate(i, j - 1),
+        new Coordinate(i - 1, j - 1),
+        height,
+        colour
+      ),
+      new Wall(
+        new Coordinate(i - 1, j - 1),
+        new Coordinate(i - 1, j),
+        height,
+        colour
+      ),
     ]);
   }
 
@@ -63,15 +73,15 @@ export class Block {
 export class GhostBlock extends Block {
   private static readonly TRANSPARENCY = 0.5;
 
-  constructor(public block: Block, private height: number = 0) {
+  constructor(public block: Block, private newHeight: number = 0) {
     super(block.walls.map((wall) => wall.clone()));
     this.applyOffset();
   }
 
   private applyOffset(): void {
     this.walls.forEach((wall) => {
-      wall.height = this.height;
-      wall.colour = GhostBlock.getGhostColor(wall.colour);
+      wall.height = this.newHeight;
+      wall.colour = GhostBlock.getGhostColour(wall.colour);
     });
   }
 
@@ -81,12 +91,7 @@ export class GhostBlock extends Block {
     });
   }
 
-  static getGhostColor(color: string): string {
-    const match = color.match(
-      /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/
-    );
-    return match
-      ? `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${GhostBlock.TRANSPARENCY})`
-      : color;
+  static getGhostColour(colour: Colour): Colour {
+    return colour.withAlpha(GhostBlock.TRANSPARENCY);
   }
 }

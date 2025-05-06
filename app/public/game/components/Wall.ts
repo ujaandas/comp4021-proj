@@ -1,24 +1,31 @@
+import { Colour } from "../utils/Colour.js";
 import { Settings } from "../utils/Settings.js";
 import { Coordinate } from "./Coordinate.js";
 
 export class Wall {
+  public height: number;
+  public colour: Colour;
+
   constructor(
     public start: Coordinate,
     public end: Coordinate,
-    options?: { height?: number; colour?: string }
+    height?: number,
+    colour?: Colour
   ) {
-    this.height = options?.height ?? Settings.fallHeight;
-    this.colour = options?.colour ?? "rgba(0, 0, 0, 1)";
+    this.height = Settings.fallHeight + (height ?? 0);
+    this.colour = colour ?? Colour.getColour("red");
   }
 
-  height: number;
-  colour: string;
+  get angle(): number {
+    return Math.atan2(this.end.j - this.start.j, this.end.i - this.start.i);
+  }
 
   clone(): Wall {
     return new Wall(
       new Coordinate(this.start.i, this.start.j),
       new Coordinate(this.end.i, this.end.j),
-      { height: this.height, colour: this.colour }
+      this.height - Settings.fallHeight,
+      this.colour
     );
   }
 }

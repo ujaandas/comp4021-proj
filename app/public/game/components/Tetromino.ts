@@ -5,15 +5,21 @@ export class Tetromino {
   public height: number = 0;
 
   constructor(public blocks: Block[]) {
-    this.height = Math.min(
-      ...this.blocks.map((block) => block.walls[0].height)
-    );
+    this.height = Math.min(...this.blocks.map((block) => block.height));
   }
 
   translate(di: number, dj: number): void {
     this.blocks.forEach((block) => {
       block.translate(di, dj);
     });
+  }
+
+  drop(n = 1): void {
+    this.blocks.forEach((block) => {
+      block.drop(n);
+      block.fallCount += n;
+    });
+    this.fallCount += n;
   }
 
   get pos(): string[] {

@@ -6,4 +6,5 @@ export class Settings {
   static readonly blockHeight = 50;
   static readonly fallHeight = 3;
   static readonly fallDelay = 1000;
+  static readonly lightSourceAngle = 45;
 }

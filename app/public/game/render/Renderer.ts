@@ -2,6 +2,7 @@ import { Block, GhostBlock } from "../components/Block.js";
 import { GhostTetromino, Tetromino } from "../components/Tetromino.js";
 import { Wall } from "../components/Wall.js";
 import { GNode } from "../tileset/GNode.js";
+import { Colour } from "../utils/Colour.js";
 import { Settings } from "../utils/Settings.js";
 
 export class Renderer {
@@ -46,18 +47,8 @@ export class Renderer {
       this.ctx.fillText(`${i},${j}`, point.x + 4, point.y - 4);
 
       edges.walls.forEach((edge) => {
-        const start = this.gridToScreen(
-          edge.start.i,
-          edge.start.j,
-          edge.height,
-          angle
-        );
-        const end = this.gridToScreen(
-          edge.end.i,
-          edge.end.j,
-          edge.height,
-          angle
-        );
+        const start = this.gridToScreen(edge.start.i, edge.start.j, 0, angle);
+        const end = this.gridToScreen(edge.end.i, edge.end.j, 0, angle);
         this.ctx.beginPath();
         this.ctx.moveTo(start.x, start.y);
         this.ctx.lineTo(end.x, end.y);
@@ -105,7 +96,7 @@ export class Renderer {
     this.ctx.lineTo(end.x, end.y - Settings.blockHeight);
     this.ctx.lineTo(end.x, end.y);
     this.ctx.closePath();
-    this.ctx.fillStyle = wall.colour;
+    this.ctx.fillStyle = wall.colour.toString();
     this.ctx.fill();
   }
 }

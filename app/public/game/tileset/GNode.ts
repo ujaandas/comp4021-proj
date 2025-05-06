@@ -1,8 +1,8 @@
 import { Coordinate } from "../components/Coordinate.js";
-import { Wall } from "../components/Wall.js";
+import { GEdge } from "./GEdge.js";
 
 export class GNode {
-  public walls: Wall[] = [];
+  public walls: GEdge[] = [];
   public occupancy: number = 0;
   constructor(public coordinate: Coordinate) {}
 }
