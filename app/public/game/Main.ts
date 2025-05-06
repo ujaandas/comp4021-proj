@@ -40,13 +40,22 @@ window.onload = function () {
   const tet3 = new Tetromino([block5]);
 
   tileset.addTet(tet1);
-  // tileset.addTet(tet2);
-  // tileset.addTet(tet3);
+  tileset.addTet(tet2);
+  tileset.addTet(tet3);
 
   tileset.initTetMode();
 
+  let lastTime = performance.now();
+
   function render() {
     if (!ctx) return;
+
+    const now = performance.now();
+    const deltaTime = now - lastTime;
+    lastTime = now;
+
+    camera.update(deltaTime);
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     renderer.renderTiles(tileset.adj, camera.angle);
