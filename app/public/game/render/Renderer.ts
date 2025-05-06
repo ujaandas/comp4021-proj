@@ -59,6 +59,7 @@ export class Renderer {
 
   renderBlock(block: Block, angle: number): void {
     block.walls.forEach((wall) => this.paintWall(wall, angle));
+    this.paintLid(block, angle);
   }
 
   renderTet(tet: Tetromino, angle: number): void {
@@ -90,13 +91,43 @@ export class Renderer {
     );
     const end = this.gridToScreen(wall.end.i, wall.end.j, wall.height, angle);
 
+    const gradient = this.ctx.createLinearGradient(
+      start.x,
+      start.y - Settings.blockHeight,
+      start.x,
+      start.y
+    );
+    gradient.addColorStop(0, wall.colour.toString());
+    gradient.addColorStop(1, wall.colour.darken(0.8).toString());
+
     this.ctx.beginPath();
     this.ctx.moveTo(start.x, start.y);
     this.ctx.lineTo(start.x, start.y - Settings.blockHeight);
     this.ctx.lineTo(end.x, end.y - Settings.blockHeight);
     this.ctx.lineTo(end.x, end.y);
     this.ctx.closePath();
-    this.ctx.fillStyle = wall.colour.toString();
+    this.ctx.fillStyle = gradient;
     this.ctx.fill();
+    // this.ctx.strokeStyle = wall.colour.darken(0.8).toString();
+    // this.ctx.stroke();
+  }
+
+  private paintLid(block: Block, angle: number): void {
+    if (!block.walls.length || block.walls.length < 4) return;
+    this.ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const pt = this.gridToScreen(
+        block.walls[i].start.i,
+        block.walls[i].start.j,
+        block.walls[i].height + 1,
+        angle
+      );
+      this.ctx.lineTo(pt.x, pt.y);
+    }
+    this.ctx.closePath();
+    this.ctx.fillStyle = block.walls[0].colour.toString();
+    this.ctx.fill();
+    // this.ctx.strokeStyle = block.walls[0].colour.darken(0.8).toString();
+    // this.ctx.stroke();
   }
 }

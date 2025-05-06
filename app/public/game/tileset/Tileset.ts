@@ -389,4 +389,10 @@ export class Tileset {
       this.activeTetGhost = new GhostTetromino(this.activeTet, maxOccupancy);
     }
   }
+
+  computeShade(cameraAngle: number): void {
+    this.tets.forEach((tet) => {
+      tet.computeShade(cameraAngle);
+    });
+  }
 }

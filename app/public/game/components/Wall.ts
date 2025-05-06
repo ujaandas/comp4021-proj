@@ -16,10 +16,6 @@ export class Wall {
     this.colour = colour ?? Colour.getColour("red");
   }
 
-  get angle(): number {
-    return Math.atan2(this.end.j - this.start.j, this.end.i - this.start.i);
-  }
-
   clone(): Wall {
     return new Wall(
       new Coordinate(this.start.i, this.start.j),
