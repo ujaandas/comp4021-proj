@@ -75,6 +75,12 @@ export class GhostBlock extends Block {
     });
   }
 
+  setHeight(n: number): void {
+      this.walls.forEach((wall) => {
+          wall.height = n;
+      });
+  }
+
   static getGhostColor(color: string): string {
     const match = color.match(
       /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/

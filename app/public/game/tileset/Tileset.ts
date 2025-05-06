@@ -114,7 +114,13 @@ export class Tileset {
     if (!this.activeBlock) return;
     if (!this.isValidTranslation(di, dj)) return;
     this.activeBlock.translate(di, dj);
+
+    const start = this.activeBlock.getPos();
+    const occupancy = this.occupancy.get(start) || 0;
+
     this.activeBlockGhost?.translate(di, dj);
+    console.log(`Setting ghost height to ${occupancy}`);
+    this.activeBlockGhost?.setHeight(occupancy);
   }
 
   isValidDrop(n: number): boolean {
@@ -132,7 +138,7 @@ export class Tileset {
 
   dropActiveBlock(n: number): void {
     if (!this.activeBlock) return;
-    if (!this.isValidDrop(n)) this.freezeActiveBlock();
+    if (!this.isValidDrop(n)) {this.freezeActiveBlock(); return; }
 
     this.activeBlock.drop(n);
     this.activeBlock.fallCount += n;
