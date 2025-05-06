@@ -56,6 +56,8 @@ export class Block {
     this.walls.forEach((wall) => {
       wall.height -= n;
     });
+    this.fallCount += n;
+    this.height = Math.min(...this.walls.map((wall) => wall.height));
   }
 
   clone(): Block {

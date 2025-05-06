@@ -158,6 +158,9 @@ export class Tileset {
   private setOccupancy(key: string, occupancy: number): void {
     const node = this.adj.get(key);
     if (node) {
+      console.log(
+        `Setting occupancy for ${key} from ${node.occupancy} to ${occupancy}`
+      );
       node.occupancy = occupancy;
     }
   }
@@ -180,24 +183,67 @@ export class Tileset {
     return height >= occupancy;
   }
 
-  isValidTetTranslation(i: number, j: number): boolean {
+  // isValidTetTranslation(i: number, j: number): boolean {
+  //   if (!this.activeTet) return false;
+
+  //   const startKeys = this.activeTet.pos;
+  //   const startCoords = startKeys.map((key) => this.coordinateCache.get(key));
+  //   if (startCoords.some((coord) => !coord)) return false;
+
+  //   return startCoords.every((coord, index) => {
+  //     const newI = coord!.i + i;
+  //     const newJ = coord!.j + j;
+
+  //     if (this.isBlockOutOfBounds(newI, newJ)) return false;
+
+  //     // const height = this.activeTet?.height || 0;
+  //     const height = this.activeTet?.blocks[index].height || 0;
+  //     const relHeight = height - Settings.fallHeight;
+  //     const occupancy = this.getOccupancy(newI, newJ);
+  //     console.log(
+  //       `@${newI}, ${newJ} - Height: ${relHeight}, Occupancy: ${occupancy}`
+  //     );
+
+  //     return relHeight >= occupancy;
+  //   });
+  // }
+
+  isValidTetTranslation(di: number, dj: number): boolean {
     if (!this.activeTet) return false;
 
-    const startKeys = this.activeTet.pos;
-    const startCoords = startKeys.map((key) => this.coordinateCache.get(key));
-    if (startCoords.some((coord) => !coord)) return false;
+    const posKeys = this.activeTet.pos;
+    const posCoords = posKeys.map((key) => this.coordinateCache.get(key));
 
-    return startCoords.every((coord) => {
-      const newI = coord!.i + i;
-      const newJ = coord!.j + j;
+    const newPosCoords = posCoords.map((coord) => {
+      if (!coord) return null;
+      const newI = coord.i + di;
+      const newJ = coord.j + dj;
 
-      if (this.isBlockOutOfBounds(newI, newJ)) return false;
+      if (this.isBlockOutOfBounds(newI, newJ)) return null;
 
-      const height = this.activeTet?.height || 0;
-      const occupancy = this.getOccupancy(newI, newJ);
-
-      return height >= occupancy;
+      return this.getOrCreateCoordinate(newI, newJ);
     });
+
+    if (newPosCoords.some((coord) => !coord)) return false;
+
+    // check if bumping into other blocks
+    // how? for each block, get the occupancy of the new position
+    // if another block is at the same height or higher, return false
+
+    const occupancies = newPosCoords.map((coord) => {
+      if (!coord) return 0;
+      return this.getOccupancy(coord.i, coord.j);
+    });
+
+    const heights = this.activeTet.heights;
+
+    console.log(`My heights: ${heights}`);
+
+    const isValid = heights.every((height, index) => {
+      return height >= occupancies[index];
+    });
+
+    return isValid;
   }
 
   translateActiveBlock(di: number, dj: number): void {
@@ -263,18 +309,17 @@ export class Tileset {
     }
 
     this.activeBlock.drop(n);
-    this.activeBlock.fallCount += n;
   }
 
   dropActiveTet(n: number): void {
     if (!this.activeTet) return;
 
-    this.activeTet.drop(n);
-
     if (!this.isValidTetDrop(n)) {
       this.freezeActiveTet();
       return;
     }
+
+    this.activeTet.drop(n);
   }
 
   addBlock(block: Block): void {
@@ -305,11 +350,12 @@ export class Tileset {
 
   placeTet(tet: Tetromino): void {
     const projectedKeys = tet.pos;
-    const occupied = projectedKeys.map((key) => this.getOccupancyByKey(key));
+    console.log(`Tet keys: ${projectedKeys}`);
 
-    occupied.forEach((occupancy, index) => {
-      this.setOccupancy(projectedKeys[index], occupancy + 1);
+    projectedKeys.forEach((key, index) => {
+      this.placeBlock(tet.blocks[index]);
     });
+
     this._placedTets.push(tet);
   }
 

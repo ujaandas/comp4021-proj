@@ -32,12 +32,12 @@ window.onload = function () {
   const block3 = Block.makeBlockOnPoint(5, 4, 1);
   const block4 = Block.makeBlockOnPoint(5, 4, 2);
 
-  const block5 = Block.makeBlockOnPoint(8, 4);
+  const block5 = Block.makeBlockOnPoint(5, 5);
   const block6 = Block.makeBlockOnPoint(8, 5);
 
   const tet1 = new Tetromino([block1, block2, block3, block4]);
   const tet2 = tet1.clone();
-  const tet3 = new Tetromino([block5, block6]);
+  const tet3 = new Tetromino([block5]);
 
   // tileset.addBlock(block1);
   // tileset.addBlock(block2);

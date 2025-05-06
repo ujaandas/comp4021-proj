@@ -2,10 +2,10 @@ import { Block, GhostBlock } from "./Block.js";
 
 export class Tetromino {
   public fallCount: number = 0;
-  public height: number = 0;
+  public heights: number[] = [];
 
   constructor(public blocks: Block[]) {
-    this.height = Math.min(...this.blocks.map((block) => block.height));
+    this.heights = this.blocks.map((block) => block.height);
   }
 
   translate(di: number, dj: number): void {
@@ -20,6 +20,7 @@ export class Tetromino {
       block.fallCount += n;
     });
     this.fallCount += n;
+    this.heights = this.blocks.map((block) => block.height);
   }
 
   get pos(): string[] {
