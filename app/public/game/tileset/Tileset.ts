@@ -103,7 +103,11 @@ export class Tileset {
       return false;
     }
 
-    return true;
+    const height = this.activeBlock.walls[0].height;
+    const projectedKey = Coordinate.makeKey(newI, newJ);
+    const occupancy = this.occupancy.get(projectedKey) || 0;
+
+    return height >= occupancy;
   }
 
   translateActiveBlock(di: number, dj: number): void {
@@ -120,10 +124,10 @@ export class Tileset {
     if (!projectedNode) return false;
 
     const occupancy = this.occupancy.get(projectedKey) || 0;
-    const height = this.activeBlock.walls[0].height;
+    const height = this.activeBlock.walls[0].height - 1;
     console.log(`curr height: ${height} vs occupancy: ${occupancy}`);
 
-    return height - 1 >= occupancy;
+    return height >= occupancy;
   }
 
   dropActiveBlock(n: number): void {
