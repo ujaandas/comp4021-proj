@@ -1,9 +1,11 @@
+import { Settings } from "./Settings.js";
+
 export class Camera {
   private _angle: number;
   private readonly step: number = 4;
 
   constructor() {
-    this._angle = 225;
+    this._angle = Settings.initialAngle;
   }
 
   spinClockwise(): void {

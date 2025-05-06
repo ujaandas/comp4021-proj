@@ -4,7 +4,7 @@ export class Settings {
   static readonly gameWidthOffset = 0;
   static readonly gameHeightOffset = -150;
   static readonly blockHeight = 50;
-  static readonly fallHeight = 3;
+  static readonly fallHeight = 5;
   static readonly fallDelay = 1000;
-  static readonly lightSourceAngle = 45;
+  static readonly initialAngle = 225;
 }
