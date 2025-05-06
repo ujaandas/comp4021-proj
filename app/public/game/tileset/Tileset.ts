@@ -7,7 +7,6 @@ import { GNode } from "./GNode.js";
 export class Tileset {
   public adj: Map<string, GNode> = new Map();
   private coordinateCache: Map<string, Coordinate> = new Map();
-  public occupancy: Map<string, number> = new Map();
   private blocks: Block[] = [];
   private _placedBlocks: Block[] = [];
   private activeBlockIndex: number = 0;
@@ -89,6 +88,22 @@ export class Tileset {
     }
   }
 
+  private getOccupancy(i: number, j: number): number {
+    const key = Coordinate.makeKey(i, j);
+    const node = this.adj.get(key);
+    return node?.occupancy || 0;
+  }
+
+  private getOccupancyKey(key: string): number {
+    const node = this.adj.get(key);
+    return node?.occupancy || 0;
+  }
+
+  private setOccupancy(key: string, occupancy: number): void {
+    const node = this.adj.get(key);
+    if (node) node.occupancy = occupancy;
+  }
+
   isValidTranslation(i: number, j: number): boolean {
     if (!this.activeBlock) return false;
     const start = this.activeBlock.getPos();
@@ -104,8 +119,7 @@ export class Tileset {
     }
 
     const height = this.activeBlock.walls[0].height;
-    const projectedKey = Coordinate.makeKey(newI, newJ);
-    const occupancy = this.occupancy.get(projectedKey) || 0;
+    const occupancy = this.getOccupancy(newI, newJ);
 
     return height >= occupancy;
   }
@@ -116,7 +130,7 @@ export class Tileset {
     this.activeBlock.translate(di, dj);
 
     const start = this.activeBlock.getPos();
-    const occupancy = this.occupancy.get(start) || 0;
+    const occupancy = this.getOccupancyKey(start);
 
     this.activeBlockGhost?.translate(di, dj);
     console.log(`Setting ghost height to ${occupancy}`);
@@ -129,7 +143,7 @@ export class Tileset {
     const projectedNode = this.coordinateCache.get(projectedKey);
     if (!projectedNode) return false;
 
-    const occupancy = this.occupancy.get(projectedKey) || 0;
+    const occupancy = this.getOccupancyKey(projectedKey);
     const height = this.activeBlock.walls[0].height - 1;
     console.log(`curr height: ${height} vs occupancy: ${occupancy}`);
 
@@ -138,7 +152,10 @@ export class Tileset {
 
   dropActiveBlock(n: number): void {
     if (!this.activeBlock) return;
-    if (!this.isValidDrop(n)) {this.freezeActiveBlock(); return; }
+    if (!this.isValidDrop(n)) {
+      this.freezeActiveBlock();
+      return;
+    }
 
     this.activeBlock.drop(n);
     this.activeBlock.fallCount += n;
@@ -158,8 +175,9 @@ export class Tileset {
     const projectedNode = this.coordinateCache.get(projectedKey);
     if (!projectedNode) return;
 
-    const occupancy = this.occupancy.get(projectedKey) || 0;
-    this.occupancy.set(projectedKey, occupancy + 1);
+    const occupancy = this.getOccupancyKey(projectedKey);
+
+    this.setOccupancy(projectedKey, occupancy + 1);
 
     console.log(
       `Placed block at ${projectedKey} with occupancy ${occupancy + 1}`
