@@ -68,5 +68,9 @@ export class InputHandler {
     this.bindKey(" ", () => {
       this.tileset.quickDropActiveTet();
     });
+
+    this.bindKey("r", () => {
+      this.tileset.spinActiveTet(Math.PI / 2);
+    });
   }
 }

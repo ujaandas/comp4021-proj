@@ -6,6 +6,7 @@ import { Tileset } from "./tileset/Tileset.js";
 import { Camera } from "./utils/Camera.js";
 import { Settings } from "./utils/Settings.js";
 import { GameTimer } from "./utils/GameTimer.js";
+import { Colour } from "./utils/Colour.js";
 
 window.onload = function () {
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -35,9 +36,12 @@ window.onload = function () {
   const block5 = Block.makeBlockOnPoint(5, 5);
   const block6 = Block.makeBlockOnPoint(8, 5);
 
-  const tet1 = new Tetromino([block1, block2, block3, block4]);
+  const tet1 = new Tetromino(
+    [block1, block2, block3, block4],
+    Colour.getColour("red")
+  );
   const tet2 = tet1.clone();
-  const tet3 = new Tetromino([block5]);
+  const tet3 = new Tetromino([block5], Colour.getColour("blue"));
 
   tileset.addTet(tet1);
   tileset.addTet(tet2);

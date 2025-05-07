@@ -329,6 +329,47 @@ export class Tileset {
     return true;
   }
 
+  public spinActiveTet(angle: number): void {
+    if (!this.activeTet) return;
+
+    const projectedKeys = this.activeTet.pos;
+    const projectedNodes = projectedKeys
+      .map((key) => this.coordinateCache.get(key))
+      .filter((node) => node !== undefined);
+
+    if (projectedNodes.length === 0) return;
+
+    const blockHeights = this.activeTet.blocks.map((block) => block.height);
+    const maxHeight = Math.max(...blockHeights);
+    const maxHeightIndex = blockHeights.indexOf(maxHeight);
+
+    const pivotNode = projectedNodes[maxHeightIndex]!;
+    const pivot = {
+      i: pivotNode.i,
+      j: pivotNode.j,
+      height: maxHeight,
+    };
+
+    this.activeTet.rotate(angle, pivot);
+    this.spinGhostTet(angle, pivot);
+  }
+
+  private spinGhostTet(
+    angle: number,
+    pivot: { i: number; j: number; height: number }
+  ): void {
+    if (!this.activeTetGhost) return;
+
+    const projectedKeys = this.activeTetGhost.pos;
+    const projectedNodes = projectedKeys
+      .map((key) => this.coordinateCache.get(key))
+      .filter((node) => node !== undefined);
+
+    if (projectedNodes.length !== projectedKeys.length) return;
+
+    this.activeTetGhost.rotate(angle, pivot);
+  }
+
   addBlock(block: Block): void {
     this.blocks.push(block);
   }

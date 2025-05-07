@@ -9,6 +9,9 @@ export class Block {
 
   constructor(private _walls: Wall[]) {
     this.height = Math.min(...this._walls.map((wall) => wall.height));
+    this._walls.map((wall) => {
+      wall.colour = this.colour;
+    });
   }
 
   public get walls(): Wall[] {
@@ -58,6 +61,29 @@ export class Block {
     });
     this.fallCount += n;
     this.height = Math.min(...this.walls.map((wall) => wall.height));
+  }
+
+  rotate(angle: number, origin: { x: number; y: number; z: number }): void {
+    this.walls.forEach((wall) => {
+      const rotatedStart = Coordinate.rotatePoint(
+        { x: wall.start.i, y: wall.start.j, z: wall.height },
+        angle,
+        origin
+      );
+      const rotatedEnd = Coordinate.rotatePoint(
+        { x: wall.end.i, y: wall.end.j, z: wall.height },
+        angle,
+        origin
+      );
+
+      wall.start.i = Math.round(rotatedStart.x);
+      wall.start.j = Math.round(rotatedStart.y);
+
+      wall.height = (rotatedStart.z + rotatedEnd.z) / 2;
+
+      wall.end.i = Math.round(rotatedEnd.x);
+      wall.end.j = Math.round(rotatedEnd.y);
+    });
   }
 
   clone(): Block {
