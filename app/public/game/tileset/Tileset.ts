@@ -275,6 +275,12 @@ export class Tileset {
     }
   }
 
+  quickDropActiveTet(): void {
+    if (!this.activeTet) return;
+
+    while (this.dropActiveTet(1)) {}
+  }
+
   isValidBlockDrop(n: number): boolean {
     if (!this.activeBlock) return false;
 
@@ -283,7 +289,7 @@ export class Tileset {
     if (!projectedNode) return false;
 
     const occupancy = this.getOccupancyByKey(projectedKey);
-    const height = this.activeBlock.height - 1;
+    const height = this.activeBlock.height - n;
 
     return height >= occupancy;
   }
@@ -295,7 +301,7 @@ export class Tileset {
     const occupancies = projectedKeys.map((key) => this.getOccupancyByKey(key));
 
     return this.activeTet.blocks.every((block, index) => {
-      const height = block.height - 1;
+      const height = block.height - n;
       return height >= occupancies[index];
     });
   }
@@ -311,15 +317,16 @@ export class Tileset {
     this.activeBlock.drop(n);
   }
 
-  dropActiveTet(n: number): void {
-    if (!this.activeTet) return;
+  dropActiveTet(n: number): boolean {
+    if (!this.activeTet) return false;
 
     if (!this.isValidTetDrop(n)) {
       this.freezeActiveTet();
-      return;
+      return false;
     }
 
     this.activeTet.drop(n);
+    return true;
   }
 
   addBlock(block: Block): void {

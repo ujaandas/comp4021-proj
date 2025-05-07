@@ -64,5 +64,9 @@ export class InputHandler {
       const [dx, dy] = this.getRotatedDirection(0, 1);
       this.tileset.translateActiveTet(dx, dy);
     });
+
+    this.bindKey(" ", () => {
+      this.tileset.quickDropActiveTet();
+    });
   }
 }
