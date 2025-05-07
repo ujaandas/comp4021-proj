@@ -1,7 +1,35 @@
 {
+  "name": "t3dtris",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "cp-public": "mkdir -p dist/public && cp -r public/{index.html,lobby.html,game.html,css,js} dist/public",
+    "cp-server": "mkdir -p dist/server && cp -r server dist",
+    "build": "tsc -p tsconfig.json && npm run cp-public && npm run cp-server",
+    "clean": "rm -rf dist",
+    "start": "node --watch dist/server/index.js",
+    "compile": "tsc --watch",
+    "dev": "npm run build && npm run compile & npm run start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ujaandas/comp4021-proj.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ujaandas/comp4021-proj/issues"
+  },
+  "homepage": "https://github.com/ujaandas/comp4021-proj#readme",
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "typescript": "^5.8.3"
+  },
   "dependencies": {
-    "bcrypt": "^5.1.1",
     "express": "^5.1.0",
+    "bcrypt": "^5.1.1",
     "express-session": "^1.18.1",
     "socket.io": "^4.8.1"
   }

@@ -2,5 +2,10 @@
   "test": {
     "username": "test",
     "password": "$2b$10$4yNsNrtvvDpq8xrdMbRtpuRc4QVjtJO8kp3JCHrT8s2EtfdqemKnS"
+  },
+  "test123": {
+    "avatar": "Turkey",
+    "name": "test",
+    "password": "$2b$10$XA4oXS5oVJNASyjcqWmCSODjxkuCGQTmdIPBIj2T1Bu4flK.lwkIW"
   }
 }
