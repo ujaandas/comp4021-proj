@@ -1,0 +1,12 @@
+.eslintcache
+.npm
+*.tsbuildinfo
+dist/           
+node_modules/   
+.env.           
+.env.test
+*.log
+logs
+npm-debug.log*
+.DS_Store       
+notes.md        
