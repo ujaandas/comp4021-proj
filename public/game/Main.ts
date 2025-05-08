@@ -53,18 +53,18 @@ window.onload = function () {
   const block4 = Block.makeBlockOnPoint(2, 2);
 
   const tet1 = new Tetromino(
-    [block1, block2, block3, block4],
+    [block1, block2, Block.makeBlockOnPoint(2, 1, 1)],
     Colour.getColour("red")
   );
-  const tet2 = tet1.clone();
+  const tet2 = tet1.clone(Colour.getColour("blue"));
   const tet3 = tet2.clone();
   const tet4 = tet3.clone();
 
   tileset.addTet(tet1);
   tileset.addTet(tet2);
-  tileset.addTet(tet3);
-  tileset.addTet(tet4);
-  tileset.addTet(tet1.clone());
+  // tileset.addTet(tet3);
+  // tileset.addTet(tet4);
+  // tileset.addTet(tet1.clone());
 
   tileset.initTetMode();
 

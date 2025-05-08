@@ -68,7 +68,9 @@ export class Renderer {
   }
 
   renderBlock(block: Block, angle: number): void {
-    block.walls.forEach((wall) => this.paintWall(wall, angle));
+    block.walls.forEach((wall) => {
+      this.paintWall(wall, angle);
+    });
     this.paintLid(block, angle);
   }
 
@@ -96,7 +98,23 @@ export class Renderer {
     this.renderTet(ghost, angle);
   }
 
-  private paintWall(wall: Wall, angle: number): void {
+  getWallDepth(wall: Wall, cameraAngle: number): number {
+    const start = this.gridToScreen(
+      wall.start.i,
+      wall.start.j,
+      wall.height,
+      cameraAngle
+    );
+    const end = this.gridToScreen(
+      wall.end.i,
+      wall.end.j,
+      wall.height,
+      cameraAngle
+    );
+    return Math.max(start.y, end.y); // Use the maximum y-coordinate of the wall's endpoints
+  }
+
+  paintWall(wall: Wall, angle: number): void {
     const start = this.gridToScreen(
       wall.start.i,
       wall.start.j,
@@ -104,15 +122,6 @@ export class Renderer {
       angle
     );
     const end = this.gridToScreen(wall.end.i, wall.end.j, wall.height, angle);
-
-    const gradient = this.ctx.createLinearGradient(
-      start.x,
-      start.y - Settings.blockHeight,
-      start.x,
-      start.y
-    );
-    gradient.addColorStop(0, wall.colour.toString());
-    gradient.addColorStop(1, wall.colour.darken(0.8).toString());
 
     this.ctx.beginPath();
     this.ctx.moveTo(start.x, start.y);
@@ -122,6 +131,7 @@ export class Renderer {
     this.ctx.closePath();
     this.ctx.fillStyle = wall.colour.toString();
     this.ctx.fill();
+
     // this.ctx.strokeStyle = wall.colour.darken(0.8).toString();
     // this.ctx.stroke();
   }

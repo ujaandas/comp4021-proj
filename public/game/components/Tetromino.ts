@@ -1,14 +1,21 @@
 import { Colour } from "../utils/Colour.js";
 import { Block, GhostBlock } from "./Block.js";
+import { Wall } from "./Wall.js";
 
 export class Tetromino {
   public fallCount: number = 0;
   public heights: number[] = [];
 
-  constructor(public blocks: Block[], public colour?: Colour) {
+  constructor(public blocks: Block[], public colour: Colour) {
     this.heights = this.blocks.map((block) => block.height);
     this.blocks.map((block) => {
-      block.colour = this.colour ?? Colour.getColour("red");
+      block.colour = this.colour;
+    });
+  }
+
+  getLidIndices(): number[] {
+    return this.blocks.map((block, index) => {
+      return index;
     });
   }
 
@@ -59,9 +66,13 @@ export class Tetromino {
     return this.blocks.map((block) => block.pos);
   }
 
-  clone(): Tetromino {
+  get walls(): Wall[] {
+    return this.blocks.flatMap((block) => block.walls);
+  }
+
+  clone(colour?: Colour): Tetromino {
     const clonedBlocks = this.blocks.map((block) => block.clone());
-    return new Tetromino(clonedBlocks);
+    return new Tetromino(clonedBlocks, colour || this.colour);
   }
 }
 
@@ -70,7 +81,7 @@ export class GhostTetromino extends Tetromino {
     const ghostBlocks = tetromino.blocks.map(
       (block) => new GhostBlock(block, ghostHeight)
     );
-    super(ghostBlocks);
+    super(ghostBlocks, GhostBlock.getGhostColour(tetromino.colour));
   }
 
   setHeight(newHeight: number): void {

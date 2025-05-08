@@ -4,21 +4,28 @@ import { Wall } from "./Wall.js";
 
 export class Block {
   public fallCount: number = 0;
-  public colour: Colour = Colour.getColour("red");
+  private _colour: Colour = Colour.getColour("red");
   public height: number;
 
   constructor(private _walls: Wall[]) {
     this.height = Math.min(...this._walls.map((wall) => wall.height));
     this._walls.map((wall) => {
-      wall.colour = this.colour;
+      wall.colour = this._colour;
     });
   }
 
-  public get walls(): Wall[] {
+  set colour(value: Colour) {
+    this._walls.forEach((wall) => {
+      wall.colour = value;
+    });
+    this._colour = value;
+  }
+
+  get walls(): Wall[] {
     return this._walls;
   }
 
-  public set walls(value: Wall[]) {
+  set walls(value: Wall[]) {
     this._walls = value;
   }
 
