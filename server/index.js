@@ -156,6 +156,7 @@ io.use((socket, next) => {
 
 io.on("connection", (socket) => {
   const user = socket.request.session.user;
+
   if (!user) {
     return socket.disconnect(true);
   }
@@ -255,64 +256,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("updateGameState", (data) => {
-    const player = onlinePlayers.get(user.username);
-    if (player && player.gameId) {
-      const game = activeGames.get(player.gameId);
-      if (game) {
-        const opponentName = game.players.find(
-          (uname) => uname !== user.username
-        );
-        const opponent = onlinePlayers.get(opponentName);
-        if (opponent) {
-          io.to(opponent.socketId).emit("opponentGameState", data);
-        }
-      }
-    }
-  });
-
-  socket.on("addLayers", ({ layers }) => {
-    const player = onlinePlayers.get(user.username);
-    if (player && player.gameId) {
-      const game = activeGames.get(player.gameId);
-      if (game) {
-        const opponentName = game.players.find(
-          (uname) => uname !== user.username
-        );
-        const opponent = onlinePlayers.get(opponentName);
-        if (opponent) {
-          io.to(opponent.socketId).emit("addLayers", { layers });
-        }
-      }
-    }
-  });
-
-  socket.on("gameOver", () => {
-    const player = onlinePlayers.get(user.username);
-    if (player && player.gameId) {
-      const game = activeGames.get(player.gameId);
-      if (game) {
-        const opponentName = game.players.find(
-          (uname) => uname !== user.username
-        );
-        const opponent = onlinePlayers.get(opponentName);
-        if (opponent) {
-          io.to(opponent.socketId).emit("opponentGameOver", {
-            player: user.username,
-          });
-        }
-        activeGames.delete(player.gameId);
-        onlinePlayers.get(user.username).inGame = false;
-        onlinePlayers.get(user.username).gameId = null;
-        if (opponent) {
-          onlinePlayers.get(opponentName).inGame = false;
-          onlinePlayers.get(opponentName).gameId = null;
-        }
-        broadcastOnlinePlayers();
-      }
-    }
-  });
-
   socket.on("game-ended", (data) => {
     const { gameId, playerScore, opponentScore } = data;
     const game = activeGames.get(gameId);
@@ -357,6 +300,74 @@ io.on("connection", (socket) => {
       "redirect",
       "/js/game-over"
     );
+  });
+
+  socket.on("getGameState", () => {
+    const playerData = onlinePlayers.get(user.username);
+    if (playerData && playerData.gameId && activeGames.has(playerData.gameId)) {
+      const game = activeGames.get(playerData.gameId);
+      console.log(
+        `Player ${user.username} is starting a game with state:`,
+        game.state
+      );
+      socket.emit("gameStart", { state: game.state });
+    }
+  });
+
+  socket.on("updateGameState", (data) => {
+    const playerData = onlinePlayers.get(user.username);
+    if (!playerData || !playerData.gameId) return;
+    const game = activeGames.get(playerData.gameId);
+    if (!game) return;
+
+    game.state = { ...game.state, ...data };
+
+    const opponentUsername = game.players.find((p) => p !== username);
+    if (opponentUsername) {
+      const opponent = onlinePlayers.get(opponentUsername);
+      if (opponent) {
+        console.log(
+          `Player ${user.username} updated game state for opponent ${opponentUsername}`
+        );
+        io.to(opponent.socketId).emit("opponentGameState", data);
+      }
+    }
+  });
+
+  socket.on("addLayers", (data) => {
+    const playerData = onlinePlayers.get(user.username);
+    if (!playerData || !playerData.gameId) return;
+    const game = activeGames.get(playerData.gameId);
+    if (!game) return;
+
+    const opponentUsername = game.players.find((p) => p !== username);
+    if (opponentUsername) {
+      const opponent = onlinePlayers.get(opponentUsername);
+      if (opponent) {
+        console.log(
+          `Player ${username} added layers for opponent ${opponentUsername}`
+        );
+        io.to(opponent.socketId).emit("addLayers", data);
+      }
+    }
+  });
+
+  socket.on("gameOver", (finalData = {}) => {
+    const playerData = onlinePlayers.get(username);
+    if (!playerData || !playerData.gameId) return;
+    const game = activeGames.get(playerData.gameId);
+    if (!game) return;
+
+    const opponentUsername = game.players.find((p) => p !== username);
+    if (opponentUsername) {
+      const opponent = onlinePlayers.get(opponentUsername);
+      if (opponent) {
+        console.log(
+          `Player ${username} ended the game, notifying opponent ${opponentUsername}`
+        );
+        io.to(opponent.socketId).emit("opponentGameOver", finalData);
+      }
+    }
   });
 
   // Handle disconnection
