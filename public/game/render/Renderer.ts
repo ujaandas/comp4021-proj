@@ -5,10 +5,8 @@ import { Wall } from "../components/Wall.js";
 import { GNode } from "../tileset/GNode.js";
 import { Settings } from "../utils/Settings.js";
 
-export interface Renderable {
-  active: Block | Tetromino;
-  ghost?: GhostBlock | GhostTetromino;
-  isActive: boolean;
+interface WallDepth {
+  wall: Wall;
   depth: number;
 }
 
@@ -67,10 +65,42 @@ export class Renderer {
     });
   }
 
+  collectWalls(blocks: Block[], angle: number): WallDepth[] {
+    const walls: WallDepth[] = [];
+
+    blocks.forEach((block) => {
+      block.walls.forEach((wall) => {
+        const start = this.gridToScreen(
+          wall.start.i,
+          wall.start.j,
+          wall.height,
+          angle
+        );
+        const end = this.gridToScreen(
+          wall.end.i,
+          wall.end.j,
+          wall.height,
+          angle
+        );
+        const depth = (start.y + end.y) / 2; // Depth sorting basis
+
+        walls.push({ wall, depth });
+      });
+    });
+
+    return walls;
+  }
+
   renderBlock(block: Block, angle: number): void {
     block.walls.forEach((wall) => {
       this.paintWall(wall, angle);
     });
+    this.paintLid(block, angle);
+  }
+
+  renderBlockWalls(block: Block, angle: number): void {
+    const blockWalls = block.walls;
+    this.renderWalls(blockWalls, angle);
     this.paintLid(block, angle);
   }
 
@@ -96,22 +126,6 @@ export class Renderer {
     this.renderTet(tet, angle);
     if (!ghost) return;
     this.renderTet(ghost, angle);
-  }
-
-  getWallDepth(wall: Wall, cameraAngle: number): number {
-    const start = this.gridToScreen(
-      wall.start.i,
-      wall.start.j,
-      wall.height,
-      cameraAngle
-    );
-    const end = this.gridToScreen(
-      wall.end.i,
-      wall.end.j,
-      wall.height,
-      cameraAngle
-    );
-    return Math.max(start.y, end.y); // Use the maximum y-coordinate of the wall's endpoints
   }
 
   paintWall(wall: Wall, angle: number): void {
@@ -164,22 +178,40 @@ export class Renderer {
     return Math.max(...depths);
   }
 
-  getBlockDepth(block: Block, cameraAngle: number): number {
-    const depths = block.walls.map((wall) => {
-      const start = this.gridToScreen(
-        wall.start.i,
-        wall.start.j,
-        wall.height,
-        cameraAngle
-      );
-      return start.y;
-    });
-    return Math.max(...depths);
+  renderWalls(walls: Wall[], angle: number): void {
+    walls.forEach((wall) => this.paintWall(wall, angle));
   }
 
-  renderTets(t: Tetromino[], angle: number): void {
-    t.forEach((tet) => {
-      this.renderTet(tet, angle);
-    });
+  renderWalls2(
+    blocks: Block[],
+    activeTet: Tetromino | null,
+    ghostTet: GhostTetromino | null,
+    angle: number
+  ): void {
+    let walls = this.collectWalls(blocks, angle);
+
+    if (activeTet) {
+      walls = walls.concat(this.collectWalls(activeTet.blocks, angle));
+    }
+
+    if (ghostTet) {
+      walls = walls.concat(this.collectWalls(ghostTet.blocks, angle));
+    }
+
+    walls.sort((a, b) => a.depth - b.depth);
+
+    walls.forEach(({ wall }) => this.paintWall(wall, angle));
+  }
+
+  renderTetAndGhostWalls(
+    tet: Tetromino,
+    angle: number,
+    ghost?: GhostTetromino
+  ): void {
+    const tetWalls = tet.blocks.flatMap((block) => block.walls);
+    this.renderWalls(tetWalls, angle);
+    if (!ghost) return;
+    const ghostWalls = ghost.blocks.flatMap((block) => block.walls);
+    this.renderWalls(ghostWalls, angle);
   }
 }

@@ -1,7 +1,7 @@
 import { Block } from "./components/Block.js";
-import { GhostTetromino, Tetromino } from "./components/Tetromino.js";
+import { Tetromino } from "./components/Tetromino.js";
 import { InputHandler } from "./utils/InputHandler.js";
-import { Renderable, Renderer } from "./render/Renderer.js";
+import { Renderer } from "./render/Renderer.js";
 import { Tileset } from "./tileset/Tileset.js";
 import { Camera } from "./utils/Camera.js";
 import { Settings } from "./utils/Settings.js";
@@ -83,50 +83,24 @@ window.onload = function () {
 
     renderer.renderTiles(tileset.adj, camera.angle);
 
-    const renderQueue: Renderable[] = [];
+    renderer.renderWalls2(
+      tileset.placedBlocks,
+      tileset.activeTet,
+      tileset.activeTetGhost,
+      camera.angle
+    );
 
-    tileset.placedBlocks.forEach((block) => {
-      renderQueue.push({
-        active: block,
-        isActive: false,
-        depth: renderer.getBlockDepth(block, camera.angle),
-      });
-    });
+    // if (tileset.activeTet && tileset.activeTetGhost) {
+    //   renderer.renderTetAndGhostWalls(
+    //     tileset.activeTet,
+    //     camera.angle,
+    //     tileset.activeTetGhost
+    //   );
+    // }
 
-    if (tileset.activeTet) {
-      let activeDepth = renderer.getTetDepth(tileset.activeTet, camera.angle);
-
-      if (tileset.activeTetGhost) {
-        const ghostDepth = renderer.getTetDepth(
-          tileset.activeTetGhost,
-          camera.angle
-        );
-        activeDepth = Math.max(activeDepth, ghostDepth);
-      }
-
-      renderQueue.push({
-        active: tileset.activeTet,
-        ghost: tileset.activeTetGhost ?? undefined,
-        isActive: true,
-        depth: activeDepth,
-      });
-    }
-
-    renderQueue.sort((a, b) => a.depth - b.depth);
-
-    renderQueue.forEach((item) => {
-      if (
-        item.isActive &&
-        item.active instanceof Tetromino &&
-        item.ghost instanceof GhostTetromino
-      ) {
-        renderer.renderTetAndGhost(item.active, camera.angle, item.ghost);
-      } else if (item.active instanceof Block) {
-        renderer.renderBlock(item.active, camera.angle);
-      }
-    });
-
-    // tileset.isBotLayerEmpty();
+    // tileset.placedBlocks.forEach((block) => {
+    //   renderer.renderBlockWalls(block, camera.angle);
+    // });
 
     gameTimer.update();
     requestAnimationFrame(render);

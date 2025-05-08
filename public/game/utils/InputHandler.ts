@@ -35,8 +35,6 @@ export class InputHandler {
     const clampedAngle =
       Math.round(effectiveRotation / this.rotationSnap) * this.rotationSnap;
 
-    console.log(`Clamped angle: ${clampedAngle}`);
-
     const rad = clampedAngle * (Math.PI / 180);
 
     const newX = Math.round(x * Math.cos(rad) - y * Math.sin(rad));
