@@ -9,6 +9,7 @@ export class InputHandler {
   constructor(private camera: Camera, private tileset: Tileset) {
     window.addEventListener("keydown", (e) => {
       const action = this.keyActions.get(e.key.toLowerCase());
+      if (e.repeat) return;
       if (action) action();
     });
   }
@@ -33,8 +34,6 @@ export class InputHandler {
 
     const clampedAngle =
       Math.round(effectiveRotation / this.rotationSnap) * this.rotationSnap;
-
-    console.log(`Clamped angle: ${clampedAngle}`);
 
     const rad = clampedAngle * (Math.PI / 180);
 
