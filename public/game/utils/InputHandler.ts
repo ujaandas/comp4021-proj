@@ -9,6 +9,7 @@ export class InputHandler {
   constructor(private camera: Camera, private tileset: Tileset) {
     window.addEventListener("keydown", (e) => {
       const action = this.keyActions.get(e.key.toLowerCase());
+      if (e.repeat) return;
       if (action) action();
     });
   }

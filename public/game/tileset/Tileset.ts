@@ -150,15 +150,15 @@ export class Tileset {
     return node.getOccupancyAtHeight(height);
   }
 
-  private getFirstValidHeight(key: string, height: number): number {
+  private getFirstValidHeight(key: string): number {
     const node = this.adj.get(key);
-    if (!node) return height;
+    let height = 10;
 
-    let newHeight = height;
-    while (node.getOccupancyAtHeight(newHeight)) {
-      newHeight++;
+    while (height > 0 && !node?.getOccupancyAtHeight(height - 1)) {
+      height--;
     }
-    return newHeight;
+
+    return height;
   }
 
   isValidActvBlockTranslation(i: number, j: number): boolean {
@@ -204,8 +204,6 @@ export class Tileset {
     const areValidTranslation = blocks.map((block) => {
       return this.isValidBlockTranslation(block, di, dj);
     });
-
-    console.log(`Valid translation: ${areValidTranslation}`);
 
     return areValidTranslation.every((isValid) => isValid);
   }
@@ -273,11 +271,7 @@ export class Tileset {
 
     const startKeys = this.activeTet.pos;
     const occupied = startKeys.map((key) => {
-      const keyI = this.activeTet?.pos.indexOf(key);
-      const height = this.activeTet?.heights[keyI!];
-      // return this.isOccupiedAtKeyAtHeight(key, height!);
-      const isOccupied = this.isOccupiedAtKeyAtHeight(key, height!);
-      return 0;
+      return this.getFirstValidHeight(key);
     });
 
     const maxOccupancy = Math.max(...occupied);
@@ -327,7 +321,6 @@ export class Tileset {
     }
 
     if (height < 0) {
-      console.log("below 0");
       return false;
     }
 
@@ -445,20 +438,29 @@ export class Tileset {
     }
   }
 
-  isLayerClearable(height: number): boolean {
-    // go through placedTets, get all blocks and filter by occupancy at height
-    const blocksAtHeight = this._placedBlocks.filter((block) => {
-      const occupancy = this.isOccupiedAtKeyAtHeight(block.pos, height);
-      return occupancy;
+  isLayerClearable(layer: number): boolean {
+    const uniquePositions = new Set<string>();
+
+    // filter placed blocks to find those on the specified layer
+    const thisLayerBlocks = this._placedBlocks.filter((block) => {
+      const occupancyHere = this.isOccupiedAtKeyAtHeight(block.pos, layer);
+
+      if (occupancyHere && !uniquePositions.has(block.pos)) {
+        uniquePositions.add(block.pos);
+        return true;
+      }
+      return false;
     });
 
-    // console.log(
-    //   `Blocks at height ${height}: ${blocksAtHeight.length} vs ${
-    //     (this.gameH - 1) * (this.gameW - 1)
-    //   }`
-    // );
+    console.log(
+      `Blocks on layer ${layer}: ${Array.from(uniquePositions).map(
+        (pos) => `(${pos})`
+      )}`
+    );
 
-    return blocksAtHeight.length >= (this.gameH - 1) * (this.gameW - 1);
+    return (
+      Array.from(uniquePositions).length >= (this.gameH - 1) * (this.gameW - 1)
+    );
   }
 
   areAnyLayersClearable(): number {
@@ -466,7 +468,6 @@ export class Tileset {
     const maxHeight = Math.max(
       ...this._placedBlocks.map((block) => block.height)
     );
-    console.log(maxHeight);
 
     // check if any layer is clearable
     for (let i = 0; i <= maxHeight; i++) {
@@ -479,24 +480,23 @@ export class Tileset {
   }
 
   private clearLayer(layer: number): void {
-    // remove all blocks at layer
-    const blocksToClear = this._placedBlocks.filter(
-      (block) => block.height === layer
-    );
-
-    blocksToClear.forEach((block) => {
-      const node = this.adj.get(block.pos);
-      if (node) {
-        node.clearOccupancyAtHeight(layer);
-      }
-    });
-
     console.log(`Clearing layer ${layer}`);
     console.log(`Placed blocks before: ${this._placedBlocks.length}`);
 
-    this._placedBlocks = this._placedBlocks.filter(
-      (block) => block.height !== layer
-    );
+    const updatedBlocks: Block[] = [];
+
+    this._placedBlocks.forEach((block) => {
+      if (block.height === layer) {
+        const node = this.adj.get(block.pos);
+        if (node) {
+          node.clearOccupancyAtHeight(layer);
+        }
+      } else {
+        updatedBlocks.push(block);
+      }
+    });
+
+    this._placedBlocks = updatedBlocks;
 
     console.log(`Placed blocks after: ${this._placedBlocks.length}`);
   }
@@ -534,8 +534,7 @@ export class Tileset {
   private setNextGhostBlock(): void {
     if (!this.activeBlock) return;
     const start = this.activeBlock?.pos;
-    const height = this.activeBlock.height;
-    const firstValidHeight = this.getFirstValidHeight(start!, height);
+    const firstValidHeight = this.getFirstValidHeight(start!);
     if (this.activeBlock) {
       this.activeBlockGhost = new GhostBlock(
         this.activeBlock,
@@ -547,14 +546,15 @@ export class Tileset {
   private setNextGhostTet(): void {
     if (!this.activeTet) return;
     const start = this.activeTet?.pos;
-    const occupancies = start!.map((key) => {
-      const keyI = this.activeTet?.pos.indexOf(key);
-      const height = this.activeTet?.heights[keyI!];
-      return this.getFirstValidHeight(key, height!);
+
+    const lowestHeights = start.map((key) => {
+      return this.getFirstValidHeight(key);
     });
-    const maxOccupancy = Math.max(...occupancies);
+
+    const lowestHeight = Math.max(...lowestHeights);
+
     if (this.activeTet) {
-      this.activeTetGhost = new GhostTetromino(this.activeTet, maxOccupancy);
+      this.activeTetGhost = new GhostTetromino(this.activeTet, lowestHeight);
     }
   }
 }

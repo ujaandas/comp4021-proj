@@ -7,10 +7,6 @@ export class GNode {
   constructor(public coordinate: Coordinate) {}
 
   getOccupancyAtHeight(height: number): boolean {
-    const occupancy = this.occupancy.get(height);
-    if (occupancy === undefined) {
-      this.occupancy.set(height, false);
-    }
     return this.occupancy.get(height) || false;
   }
 
