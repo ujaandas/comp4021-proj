@@ -35,7 +35,7 @@ export class Camera {
       this._angle = (this._angle + 360) % 360;
     }
 
-    console.log(`Angle: ${this._angle}`);
+    // console.log(`Angle: ${this._angle}`);
   }
 
   get angle(): number {

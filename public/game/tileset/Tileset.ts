@@ -17,14 +17,17 @@ export class Tileset {
   public activeTetGhost: GhostTetromino | null = null;
 
   private updateCallback: () => void;
+  private gameoverCallback: () => void;
 
   constructor(
     private gameW: number,
     private gameH: number,
-    updateCallback: () => void
+    updateCallback: () => void,
+    gameoverCallback: () => void
   ) {
     this.initializeGraph();
     this.updateCallback = updateCallback;
+    this.gameoverCallback = gameoverCallback;
   }
 
   private initializeGraph(): void {
@@ -131,8 +134,8 @@ export class Tileset {
     }
   }
 
-  playTetMode(): void {
-    if (!this.activeTet) return;
+  playTetMode(): boolean {
+    if (!this.activeTet) return false;
 
     if (this.activeTet.fallCount < Settings.fallHeight) {
       this.dropActiveTet(1);
@@ -140,6 +143,8 @@ export class Tileset {
       this.setNextActiveTet();
       this.setNextGhostTet();
     }
+
+    return true;
   }
 
   private isBlockOutOfBounds(i: number, j: number): boolean {
@@ -439,6 +444,12 @@ export class Tileset {
     const projectedKey = block.pos;
     const height = block.height;
     const occupancy = this.isOccupiedAtKeyAtHeight(projectedKey, height);
+
+    if (height == Settings.fallHeight) {
+      console.log("Game Over");
+      this.gameoverCallback();
+      return;
+    }
 
     const node = this.adj.get(projectedKey);
     if (node) {

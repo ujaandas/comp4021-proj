@@ -34,7 +34,8 @@ export class Colour {
     return new Colour(r, g, b, a);
   }
 
-  // cursed binary colour generation LOL have fun TA
+  // cursed binary bitwise colour generation LOL have fun TA
+  // (as if the tileset class wasnt already awful enough at ~600 lines hahaha)
   static generateColours(): number[][] {
     const colours = [];
     for (let i = 0; i < 8; i++) {
@@ -43,7 +44,11 @@ export class Colour {
       const b = i & 0b001 ? 255 : 0;
       colours.push([r, g, b]);
     }
-    return colours.filter((c) => c.some((v) => v === 255));
+    return colours.filter(
+      (c) =>
+        c.some((v) => v === 255) &&
+        !(c[0] === 255 && c[1] === 255 && c[2] === 255)
+    );
   }
 
   static random(): Colour {

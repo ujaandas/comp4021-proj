@@ -4,7 +4,6 @@ import { Tileset } from "./tileset/Tileset.js";
 import { Camera } from "./utils/Camera.js";
 import { Settings } from "./utils/Settings.js";
 import { GameTimer } from "./utils/GameTimer.js";
-import { MultiplayerSocket } from "./socket/Socket.js";
 import { TetrominoGenerator } from "./utils/TetGenerator.js";
 
 window.onload = function () {
@@ -17,14 +16,24 @@ window.onload = function () {
 
   // const mpSocket = new MultiplayerSocket("http://localhost:3000");
 
-  const tileset = new Tileset(Settings.mapHeight, Settings.mapWidth, () => {});
+  const tileset = new Tileset(
+    Settings.mapHeight,
+    Settings.mapWidth,
+    () => {},
+    () => {
+      return;
+    }
+  );
 
   const camera = new Camera();
   const renderer = new Renderer(canvas, ctx);
   const inputHandler = new InputHandler(camera, tileset);
 
   const gameTimer = new GameTimer(Settings.fallDelay, () => {
-    tileset.playTetMode();
+    if (!tileset.playTetMode()) {
+      tileset.addTet(TetrominoGenerator.getRandomTetromino());
+      tileset.initTetMode();
+    }
   });
 
   inputHandler.bindDefaultCameraControls();
@@ -32,12 +41,9 @@ window.onload = function () {
 
   tileset.initTetMode();
 
-  function spawnTetromino() {
-    const tetromino = TetrominoGenerator.getRandomTetromino();
-    tileset.addTet(tetromino);
-  }
+  tileset.addTet(TetrominoGenerator.getRandomTetromino());
 
-  spawnTetromino();
+  tileset.initTetMode();
 
   let lastTime = performance.now();
 
@@ -61,14 +67,9 @@ window.onload = function () {
       camera.angle
     );
 
-    if (!tileset.activeTet) {
-      spawnTetromino();
-    }
-
     gameTimer.update();
 
     requestAnimationFrame(render);
   }
-
   render();
 };

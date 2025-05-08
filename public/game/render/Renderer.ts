@@ -9,8 +9,8 @@ type RenderItem =
   | { depth: number; key: string; type: "lid"; block: Block };
 
 export class Renderer {
-  private tileWidth = 100;
-  private tileHeight = 50;
+  private tileWidth = Settings.tileWidth;
+  private tileHeight = Settings.tileHeight;
   private originX: number;
   private originY: number;
 
@@ -145,7 +145,6 @@ export class Renderer {
         this.paintLid(item.block, angle);
       }
     });
-    console.log(`Total items rendered: ${renderItems.length}`);
   }
 
   paintWall(wall: Wall, angle: number): void {
@@ -159,8 +158,8 @@ export class Renderer {
 
     this.ctx.beginPath();
     this.ctx.moveTo(start.x, start.y);
-    this.ctx.lineTo(start.x, start.y - Settings.blockHeight);
-    this.ctx.lineTo(end.x, end.y - Settings.blockHeight);
+    this.ctx.lineTo(start.x, start.y - Settings.tileHeight);
+    this.ctx.lineTo(end.x, end.y - Settings.tileHeight);
     this.ctx.lineTo(end.x, end.y);
     this.ctx.closePath();
     this.ctx.fillStyle = wall.colour.toString();
