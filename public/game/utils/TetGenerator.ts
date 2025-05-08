@@ -1,7 +1,7 @@
 import { Block } from "../components/Block.js";
 import { Tetromino } from "../components/Tetromino.js";
-import { Colour } from "../utils/Colour.js";
-import { Settings } from "../utils/Settings.js";
+import { Colour } from "./Colour.js";
+import { Settings } from "./Settings.js";
 
 export class TetrominoGenerator {
   static createI(): Tetromino {

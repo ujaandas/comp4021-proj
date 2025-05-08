@@ -7,6 +7,7 @@ import { GNode } from "./GNode.js";
 
 export class Tileset {
   public adj: Map<string, GNode> = new Map();
+  private score = 0;
   private coordinateCache: Map<string, Coordinate> = new Map();
   private blocks: Block[] = [];
   private tets: Tetromino[] = [];
@@ -16,17 +17,23 @@ export class Tileset {
   public activeBlockGhost: GhostBlock | null = null;
   public activeTetGhost: GhostTetromino | null = null;
 
-  private updateCallback: () => void;
+  private updateTilesetCallback: () => void;
+  private updateScoreCallback: (score: number) => void;
+  private sendLayersCallback: (clearable: number) => void;
   private gameoverCallback: () => void;
 
   constructor(
     private gameW: number,
     private gameH: number,
-    updateCallback: () => void,
+    updateTilesetCallback: () => void,
+    updateScoreCallback: (score: number) => void,
+    sendLayersCallback: (clearable: number) => void,
     gameoverCallback: () => void
   ) {
     this.initializeGraph();
-    this.updateCallback = updateCallback;
+    this.updateTilesetCallback = updateTilesetCallback;
+    this.updateScoreCallback = updateScoreCallback;
+    this.sendLayersCallback = sendLayersCallback;
     this.gameoverCallback = gameoverCallback;
   }
 
@@ -372,12 +379,12 @@ export class Tileset {
 
     if (!this.isValidTetDrop(n)) {
       this.freezeActiveTet();
-      this.updateCallback();
+      this.updateTilesetCallback();
       return false;
     }
 
     this.activeTet.drop(n);
-    this.updateCallback();
+    this.updateTilesetCallback();
     return true;
   }
 
@@ -526,13 +533,18 @@ export class Tileset {
 
     projectedKeys.forEach((_, index) => {
       this.placeBlock(tet.blocks[index]);
+      this.score += 10 * (index + 1);
     });
 
     const clearable = this.areAnyLayersClearable();
 
     if (clearable !== -1) {
       this.clearLayer(clearable);
+      this.score += 100 * (clearable + 1);
+      this.sendLayersCallback(clearable);
     }
+
+    this.updateScoreCallback(this.score);
   }
 
   getRenderableBlocks(): Block[] {

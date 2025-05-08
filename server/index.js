@@ -10,7 +10,7 @@ import { Server } from "socket.io";
 // Initialize Express app
 const app = express();
 // Serve static files
-app.use(express.static("public"));
+app.use(express.static("dist/public"));
 
 // Security middleware
 app.use(json());

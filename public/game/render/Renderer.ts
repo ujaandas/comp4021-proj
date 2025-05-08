@@ -2,6 +2,7 @@ import { Block, GhostBlock } from "../components/Block.js";
 import { GhostTetromino, Tetromino } from "../components/Tetromino.js";
 import { Wall } from "../components/Wall.js";
 import { GNode } from "../tileset/GNode.js";
+import { Colour } from "../utils/Colour.js";
 import { Settings } from "../utils/Settings.js";
 
 type RenderItem =
@@ -13,6 +14,7 @@ export class Renderer {
   private tileHeight = Settings.tileHeight;
   private originX: number;
   private originY: number;
+  private colour: Colour;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -20,6 +22,7 @@ export class Renderer {
   ) {
     this.originX = canvas.width / 2 + Settings.gameWidthOffset;
     this.originY = canvas.height / 2 + Settings.gameHeightOffset;
+    this.colour = Colour.random();
   }
 
   private gridToScreen(
@@ -50,14 +53,16 @@ export class Renderer {
       this.ctx.beginPath();
       this.ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
       this.ctx.fill();
-      this.ctx.fillText(`${i},${j}`, point.x + 4, point.y - 4);
+      // this.ctx.fillText(`${i},${j}`, point.x + 4, point.y - 4);
 
+      this.ctx.strokeStyle = Colour.random().darken(0.5).toString();
       edges.walls.forEach((edge) => {
         const start = this.gridToScreen(edge.start.i, edge.start.j, 0, angle);
         const end = this.gridToScreen(edge.end.i, edge.end.j, 0, angle);
         this.ctx.beginPath();
         this.ctx.moveTo(start.x, start.y);
         this.ctx.lineTo(end.x, end.y);
+        this.ctx.strokeStyle = this.colour.darken(0.3).toString();
         this.ctx.stroke();
       });
     });
