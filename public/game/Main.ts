@@ -28,7 +28,7 @@ window.onload = function () {
   inputHandler.bindDefaultCameraControls();
   inputHandler.bindDefaultMovementControls();
 
-  const block1 = Block.makeBlockOnPoint(5, 5);
+  const block1 = Block.makeBlockOnPoint(5, 5, 2);
   const block2 = Block.makeBlockOnPoint(5, 4);
   const block3 = Block.makeBlockOnPoint(5, 4, 1);
   const block4 = Block.makeBlockOnPoint(5, 4, 2);
@@ -100,6 +100,8 @@ window.onload = function () {
         renderer.renderTet(item.tet, camera.angle);
       }
     });
+
+    // tileset.isBotLayerEmpty();
 
     gameTimer.update();
     requestAnimationFrame(render);

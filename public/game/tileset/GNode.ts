@@ -3,6 +3,18 @@ import { GEdge } from "./GEdge.js";
 
 export class GNode {
   public walls: GEdge[] = [];
-  public occupancy: number = 0;
+  public occupancy: Map<number, boolean> = new Map();
   constructor(public coordinate: Coordinate) {}
+
+  getOccupancyAtHeight(height: number): boolean {
+    const occupancy = this.occupancy.get(height);
+    if (occupancy === undefined) {
+      this.occupancy.set(height, false);
+    }
+    return this.occupancy.get(height) || false;
+  }
+
+  setOccupiedAtHeight(height: number): void {
+    this.occupancy.set(height, true);
+  }
 }
