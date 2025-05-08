@@ -16,8 +16,15 @@ export class Tileset {
   public activeBlockGhost: GhostBlock | null = null;
   public activeTetGhost: GhostTetromino | null = null;
 
-  constructor(private gameW: number, private gameH: number) {
+  private updateCallback: () => void;
+
+  constructor(
+    private gameW: number,
+    private gameH: number,
+    updateCallback: () => void
+  ) {
     this.initializeGraph();
+    this.updateCallback = updateCallback;
   }
 
   private initializeGraph(): void {
@@ -360,10 +367,12 @@ export class Tileset {
 
     if (!this.isValidTetDrop(n)) {
       this.freezeActiveTet();
+      this.updateCallback();
       return false;
     }
 
     this.activeTet.drop(n);
+    this.updateCallback();
     return true;
   }
 

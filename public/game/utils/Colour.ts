@@ -19,9 +19,38 @@ export class Colour {
         return Colour.fromString("rgba(0, 255, 0, 1)");
       case "blue":
         return Colour.fromString("rgba(0, 0, 255, 1)");
+      case "cyan":
+        return Colour.fromString("rgba(0, 255, 255, 1)");
+      case "magenta":
+        return Colour.fromString("rgba(255, 0, 255, 1)");
+      case "yellow":
+        return Colour.fromString("rgba(255, 255, 0, 1)");
       default:
         return Colour.fromString("rgba(0, 0, 0, 1)");
     }
+  }
+
+  static fromRGB(r: number, g: number, b: number, a: number = 1): Colour {
+    return new Colour(r, g, b, a);
+  }
+
+  // cursed binary colour generation LOL have fun TA
+  static generateColours(): number[][] {
+    const colours = [];
+    for (let i = 0; i < 8; i++) {
+      const r = i & 0b100 ? 255 : 0;
+      const g = i & 0b010 ? 255 : 0;
+      const b = i & 0b001 ? 255 : 0;
+      colours.push([r, g, b]);
+    }
+    return colours.filter((c) => c.some((v) => v === 255));
+  }
+
+  static random(): Colour {
+    const colours = this.generateColours();
+    const index = Math.floor(Math.random() * colours.length);
+    const [r, g, b] = colours[index];
+    return Colour.fromRGB(r, g, b);
   }
 
   static fromString(colour: string): Colour {
