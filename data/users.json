@@ -7,5 +7,17 @@
     "avatar": "Turkey",
     "name": "test",
     "password": "$2b$10$XA4oXS5oVJNASyjcqWmCSODjxkuCGQTmdIPBIj2T1Bu4flK.lwkIW"
+  },
+  "kat": {
+    "avatar": "Rabbit",
+    "name": "kat",
+    "password": "$2b$10$QyQrlC3hdtuOHb3tCpNHiOu8XJ4WCyvAlbddjYaa6tmMBYh4UFaya",
+    "highScore": 10
+  },
+  "hat": {
+    "avatar": "Rabbit Face",
+    "name": "hat",
+    "password": "$2b$10$eFaqEQF/QGg/9Frg9/IHDOLiR6ywdwogfXQ02U.laqVxaXtBreiea",
+    "highScore": 20
   }
 }

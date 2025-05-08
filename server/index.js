@@ -1,14 +1,14 @@
-import express from "express";
-import session from "express-session";
-import path from "path";
-import { readFileSync, writeFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { hash as _hash, compareSync } from "bcrypt";
-import { createServer } from "http";
-import { Server } from "socket.io";
+// Use CommonJS require for all dependencies
+const express = require("express");
+const bcrypt = require("bcrypt");
+const fs = require("fs");
+const session = require("express-session");
+const path = require("path");
+const http = require("http");
+const { Server } = require("socket.io");
 
-const filename = fileURLToPath(import.meta.url);
-const dirname = path.dirname(filename);
+// Get directory name
+const dirname = __dirname;
 
 // Initialize Express app
 const app = express();
@@ -40,7 +40,7 @@ app.post("/auth/register", async (req, res) => {
     const { username, avatar, name, password } = req.body;
 
     // Read and parse users file
-    const users = JSON.parse(readFileSync(usersFilePath, "utf8"));
+    const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
 
     if (!username || !avatar || !name || !password) {
       return res.json({ status: "error", error: "All fields are required" });
@@ -55,21 +55,22 @@ app.post("/auth/register", async (req, res) => {
 
     if (users[username]) {
       return res
-        .status(409)
-        .json({ status: "error", error: "Username already exists" });
+          .status(409)
+          .json({ status: "error", error: "Username already exists" });
     }
 
     // Hash the password
-    const hash = await _hash(password, 10);
+    const hash = await bcrypt.hash(password, 10);
 
     users[username] = {
       avatar: avatar,
       name: name,
-      password: hash, // Store the hashed password, not the plain text
+      password: hash,
+      highScore: 0,
     };
 
     // Write updated users back to file
-    writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
 
     res.json({ success: true });
   } catch (err) {
@@ -81,7 +82,7 @@ app.post("/auth/register", async (req, res) => {
 app.post("/auth/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const users = JSON.parse(readFileSync("./data/users.json", "utf8"));
+    const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
 
     if (!users[username]) {
       return res.json({
@@ -90,7 +91,7 @@ app.post("/auth/login", async (req, res) => {
       });
     }
 
-    if (!compareSync(password, users[username].password)) {
+    if (!bcrypt.compareSync(password, users[username].password)) {
       return res.json({
         status: "error",
         error: "Invalid username or password",
@@ -124,7 +125,7 @@ app.get("/lobby", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/");
   }
-  res.sendFile(join(dirname, "../public/lobby.html"));
+  res.sendFile(path.join(dirname, "../public/lobby.html"));
 });
 
 // Serve the game page
@@ -132,14 +133,16 @@ app.get("/game", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/");
   }
-  res.sendFile(join(dirname, "../public/game.html"));
+  res.sendFile(path.join(dirname, "../public/game.html"));
 });
 
-const server = createServer(app);
-const io = new Server(server);
+const server = http.createServer(app);
+const io = require('socket.io')(server);
 
 // Track online players and their status
 const onlinePlayers = new Map();
+// Track active games
+const activeGames = new Map();
 
 io.use((socket, next) => {
   sessionConfig(socket.request, {}, next);
@@ -147,7 +150,6 @@ io.use((socket, next) => {
 
 io.on("connection", (socket) => {
   const user = socket.request.session.user;
-
   if (!user) {
     return socket.disconnect(true);
   }
@@ -182,22 +184,19 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Add this near your onlinePlayers Map
-  const activeGames = new Map();
-
   // Modify the game-accept handler to track the game
   socket.on("game-accept", ({ to }) => {
     const initiator = onlinePlayers.get(to);
     const acceptor = onlinePlayers.get(user.username);
 
     if (initiator && acceptor && !initiator.inGame && !acceptor.inGame) {
+
       // Create game record
       const gameId = `${to}-${user.username}-${Date.now()}`;
       activeGames.set(gameId, {
         players: [to, user.username],
         createdAt: Date.now(),
       });
-
       // Store game ID with players
       onlinePlayers.get(user.username).gameId = gameId;
       onlinePlayers.get(to).gameId = gameId;
@@ -224,6 +223,7 @@ io.on("connection", (socket) => {
       broadcastOnlinePlayers();
     }
   });
+
   // When a player declines a game request
   socket.on("game-decline", ({ to }) => {
     const initiator = onlinePlayers.get(to);
@@ -249,6 +249,43 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on('game-ended', (data) => {
+    const { gameId, playerScore, opponentScore } = data;
+    const game = activeGames.get(gameId);
+    if (!game) return;
+
+    const [player1, player2] = game.players;
+
+    // Update high scores
+    const users = JSON.parse(fs.readFileSync(usersFilePath, 'utf8'));
+    if (users[player1].highScore < playerScore) users[player1].highScore = playerScore;
+    if (users[player2].highScore < opponentScore) users[player2].highScore = opponentScore;
+    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+
+    // Update sessions with last game data
+    const updateSession = (username, myScore, opponent, opponentScore) => {
+      const playerSocket = onlinePlayers.get(username)?.socketId;
+      if (playerSocket) {
+        const playerSession = io.sockets.sockets.get(playerSocket).request.session;
+        playerSession.lastGame = { myScore, opponent, opponentScore };
+        playerSession.save();
+      }
+    };
+
+    updateSession(player1, playerScore, player2, opponentScore);
+    updateSession(player2, opponentScore, player1, playerScore);
+
+    // Clean up game
+    activeGames.delete(gameId);
+    onlinePlayers.get(player1).inGame = false;
+    onlinePlayers.get(player2).inGame = false;
+    broadcastOnlinePlayers();
+
+    // Redirect players to game-over
+    io.to(onlinePlayers.get(player1).socketId).emit('redirect', '/js/game-over');
+    io.to(onlinePlayers.get(player2).socketId).emit('redirect', '/js/game-over');
+  });
+
   // Handle disconnection
   socket.on("disconnect", (reason) => {
     if (onlinePlayers.has(user.username)) {
@@ -265,43 +302,59 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("heartbeat", () => {
-    // Refresh the player's last active time
-    if (user && onlinePlayers.has(user.username)) {
-      onlinePlayers.get(user.username).lastActive = Date.now();
-    }
-  });
-
   socket.on("error", (error) => {
     console.log(`Socket error for ${user.username}:`, error);
   });
 
   function broadcastOnlinePlayers() {
     const playersList = Array.from(onlinePlayers.entries()).map(
-      ([username, data]) => ({
-        username,
-        avatar: data.avatar,
-        name: data.name,
-        inGame: data.inGame,
-      })
+        ([username, data]) => ({
+          username,
+          avatar: data.avatar,
+          name: data.name,
+          inGame: data.inGame,
+        })
     );
     io.emit("online-players", playersList);
   }
+});
 
-  app.get("/api/game-status", (req, res) => {
-    if (!req.session.user) {
-      return res.redirect("/");
-    }
+// Serve the game-over page
+app.get("/game-over", (req, res) => {
+  if (!req.session.user) return res.redirect("/");
+  res.sendFile(path.join(dirname, "../public/game-over.html"));
+});
 
-    const player = onlinePlayers.get(req.session.user.username);
-    res.json({
-      inGame: player?.inGame || false,
-      opponent: player?.gameId
+app.get("/api/game-over-data", (req, res) => {
+  if (!req.session.user) return res.status(403).json({ error: "Unauthorized" });
+
+  const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
+  const highScores = Object.entries(users).map(([username, data]) => ({
+    username,
+    name: data.name,
+    avatar: data.avatar,
+    highScore: data.highScore,
+  })).sort((a, b) => b.highScore - a.highScore);
+
+  res.json({
+    lastGame: req.session.lastGame || null,
+    highScores,
+  });
+});
+
+app.get("/api/game-status", (req, res) => {
+  if (!req.session.user) {
+    return res.redirect("/");
+  }
+
+  const player = onlinePlayers.get(req.session.user.username);
+  res.json({
+    inGame: player?.inGame || false,
+    opponent: player?.gameId
         ? activeGames
             .get(player.gameId)
             .players.find((p) => p !== req.session.user.username)
         : null,
-    });
   });
 });
 

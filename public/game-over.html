@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Over</title>
+    <link rel="stylesheet" href="/css/style.css"></head>
+<body>
+<div class="game-over-container">
+    <h1> Game Over!</h1>
+
+    <div class="score-summary">
+        <div class="result-card">
+            <h2>Your Score</h2>
+            <div class="score" id="player-score">0</div>
+        </div>
+
+        <div class="vs-text">VS</div>
+
+        <div class="result-card">
+            <h2 id="opponent-name">Opponent</h2>
+            <div class="score" id="opponent-score">0</div>
+        </div>
+    </div>
+
+    <div class="high-scores">
+        <h2>Leaderboard</h2>
+        <div id="loading-message"></div>
+        <div id="error-message" class="error"></div>
+        <ul id="high-scores-list" class="high-scores-list"></ul>
+    </div>
+
+    <div class="action-buttons">
+        <a href="/lobby" class="btn">Play Again</a>
+        <a href="/" class="btn">Main Menu</a>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/game-over.js"></script>
+</body>
+</html>

@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
-  "type": "module",
   "scripts": {
     "cp-public": "mkdir -p dist/public && cp -r public/{index.html,lobby.html,game.html,css,js} dist/public",
     "cp-server": "mkdir -p dist/server && cp -r server dist",
