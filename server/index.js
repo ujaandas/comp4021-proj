@@ -1,24 +1,21 @@
 // Use CommonJS require for all dependencies
-const express = require("express");
-const bcrypt = require("bcrypt");
-const fs = require("fs");
-const session = require("express-session");
-const path = require("path");
-const http = require("http");
-const { Server } = require("socket.io");
-
-// Get directory name
-const dirname = __dirname;
+import express, { json } from "express";
+import { hash as _hash, compareSync } from "bcrypt";
+import { readFileSync, writeFileSync } from "fs";
+import session from "express-session";
+import { join } from "path";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 // Initialize Express app
 const app = express();
 // Serve static files
-app.use(express.static(`${dirname}/../public`));
+app.use(express.static("public"));
 
 // Security middleware
-app.use(express.json());
+app.use(json());
 
-const usersFilePath = `${dirname}/../data/users.json`;
+const usersFilePath = `data/users.json`;
 
 // Session Configuration
 const sessionConfig = session({
@@ -40,7 +37,7 @@ app.post("/auth/register", async (req, res) => {
     const { username, avatar, name, password } = req.body;
 
     // Read and parse users file
-    const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
+    const users = JSON.parse(readFileSync(usersFilePath, "utf8"));
 
     if (!username || !avatar || !name || !password) {
       return res.json({ status: "error", error: "All fields are required" });
@@ -55,12 +52,12 @@ app.post("/auth/register", async (req, res) => {
 
     if (users[username]) {
       return res
-          .status(409)
-          .json({ status: "error", error: "Username already exists" });
+        .status(409)
+        .json({ status: "error", error: "Username already exists" });
     }
 
     // Hash the password
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await _hash(password, 10);
 
     users[username] = {
       avatar: avatar,
@@ -70,7 +67,7 @@ app.post("/auth/register", async (req, res) => {
     };
 
     // Write updated users back to file
-    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+    writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
 
     res.json({ success: true });
   } catch (err) {
@@ -82,7 +79,7 @@ app.post("/auth/register", async (req, res) => {
 app.post("/auth/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
+    const users = JSON.parse(readFileSync(usersFilePath, "utf8"));
 
     if (!users[username]) {
       return res.json({
@@ -91,7 +88,7 @@ app.post("/auth/login", async (req, res) => {
       });
     }
 
-    if (!bcrypt.compareSync(password, users[username].password)) {
+    if (!compareSync(password, users[username].password)) {
       return res.json({
         status: "error",
         error: "Invalid username or password",
@@ -125,7 +122,7 @@ app.get("/lobby", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/");
   }
-  res.sendFile(path.join(dirname, "../public/lobby.html"));
+  res.sendFile(join(dirname, "../public/lobby.html"));
 });
 
 // Serve the game page
@@ -133,11 +130,20 @@ app.get("/game", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/");
   }
-  res.sendFile(path.join(dirname, "../public/game.html"));
+  res.sendFile(join(dirname, "../public/game.html"));
 });
 
-const server = http.createServer(app);
-const io = require('socket.io')(server);
+// const server = createServer(app);
+// const io = require("socket.io")(server);
+
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
 // Track online players and their status
 const onlinePlayers = new Map();
@@ -190,7 +196,6 @@ io.on("connection", (socket) => {
     const acceptor = onlinePlayers.get(user.username);
 
     if (initiator && acceptor && !initiator.inGame && !acceptor.inGame) {
-
       // Create game record
       const gameId = `${to}-${user.username}-${Date.now()}`;
       activeGames.set(gameId, {
@@ -249,7 +254,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on('game-ended', (data) => {
+  socket.on("game-ended", (data) => {
     const { gameId, playerScore, opponentScore } = data;
     const game = activeGames.get(gameId);
     if (!game) return;
@@ -257,16 +262,19 @@ io.on("connection", (socket) => {
     const [player1, player2] = game.players;
 
     // Update high scores
-    const users = JSON.parse(fs.readFileSync(usersFilePath, 'utf8'));
-    if (users[player1].highScore < playerScore) users[player1].highScore = playerScore;
-    if (users[player2].highScore < opponentScore) users[player2].highScore = opponentScore;
-    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+    const users = JSON.parse(readFileSync(usersFilePath, "utf8"));
+    if (users[player1].highScore < playerScore)
+      users[player1].highScore = playerScore;
+    if (users[player2].highScore < opponentScore)
+      users[player2].highScore = opponentScore;
+    writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
 
     // Update sessions with last game data
     const updateSession = (username, myScore, opponent, opponentScore) => {
       const playerSocket = onlinePlayers.get(username)?.socketId;
       if (playerSocket) {
-        const playerSession = io.sockets.sockets.get(playerSocket).request.session;
+        const playerSession =
+          io.sockets.sockets.get(playerSocket).request.session;
         playerSession.lastGame = { myScore, opponent, opponentScore };
         playerSession.save();
       }
@@ -282,8 +290,14 @@ io.on("connection", (socket) => {
     broadcastOnlinePlayers();
 
     // Redirect players to game-over
-    io.to(onlinePlayers.get(player1).socketId).emit('redirect', '/js/game-over');
-    io.to(onlinePlayers.get(player2).socketId).emit('redirect', '/js/game-over');
+    io.to(onlinePlayers.get(player1).socketId).emit(
+      "redirect",
+      "/js/game-over"
+    );
+    io.to(onlinePlayers.get(player2).socketId).emit(
+      "redirect",
+      "/js/game-over"
+    );
   });
 
   // Handle disconnection
@@ -308,12 +322,12 @@ io.on("connection", (socket) => {
 
   function broadcastOnlinePlayers() {
     const playersList = Array.from(onlinePlayers.entries()).map(
-        ([username, data]) => ({
-          username,
-          avatar: data.avatar,
-          name: data.name,
-          inGame: data.inGame,
-        })
+      ([username, data]) => ({
+        username,
+        avatar: data.avatar,
+        name: data.name,
+        inGame: data.inGame,
+      })
     );
     io.emit("online-players", playersList);
   }
@@ -322,19 +336,21 @@ io.on("connection", (socket) => {
 // Serve the game-over page
 app.get("/game-over", (req, res) => {
   if (!req.session.user) return res.redirect("/");
-  res.sendFile(path.join(dirname, "../public/game-over.html"));
+  res.sendFile(join(dirname, "../public/game-over.html"));
 });
 
 app.get("/api/game-over-data", (req, res) => {
   if (!req.session.user) return res.status(403).json({ error: "Unauthorized" });
 
-  const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
-  const highScores = Object.entries(users).map(([username, data]) => ({
-    username,
-    name: data.name,
-    avatar: data.avatar,
-    highScore: data.highScore,
-  })).sort((a, b) => b.highScore - a.highScore);
+  const users = JSON.parse(readFileSync(usersFilePath, "utf8"));
+  const highScores = Object.entries(users)
+    .map(([username, data]) => ({
+      username,
+      name: data.name,
+      avatar: data.avatar,
+      highScore: data.highScore,
+    }))
+    .sort((a, b) => b.highScore - a.highScore);
 
   res.json({
     lastGame: req.session.lastGame || null,
@@ -351,10 +367,10 @@ app.get("/api/game-status", (req, res) => {
   res.json({
     inGame: player?.inGame || false,
     opponent: player?.gameId
-        ? activeGames
-            .get(player.gameId)
-            .players.find((p) => p !== req.session.user.username)
-        : null,
+      ? activeGames
+          .get(player.gameId)
+          .players.find((p) => p !== req.session.user.username)
+      : null,
   });
 });
 

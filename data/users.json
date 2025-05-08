@@ -19,5 +19,17 @@
     "name": "hat",
     "password": "$2b$10$eFaqEQF/QGg/9Frg9/IHDOLiR6ywdwogfXQ02U.laqVxaXtBreiea",
     "highScore": 20
+  },
+  "user": {
+    "avatar": "Rooster",
+    "name": "user",
+    "password": "$2b$10$jFyJwIeOcoH/6GoFxM2Zw.mxynAjE1jNb6fc8w/em2k.c0rFDha8m",
+    "highScore": 0
+  },
+  "user2": {
+    "avatar": "Chicken",
+    "name": "user2",
+    "password": "$2b$10$dMB7s3WzEpsiBvl0GpxnV.LQu8Y.xuQjBH3VUyANp57N/scnmGfXG",
+    "highScore": 0
   }
 }
