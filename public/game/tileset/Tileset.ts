@@ -166,7 +166,7 @@ export class Tileset {
     return newHeight;
   }
 
-  isValidBlockTranslation(i: number, j: number): boolean {
+  isValidActvBlockTranslation(i: number, j: number): boolean {
     if (!this.activeBlock) return false;
 
     const startKey = this.activeBlock.pos;
@@ -184,76 +184,80 @@ export class Tileset {
     return occupied;
   }
 
-  // isValidTetTranslation(i: number, j: number): boolean {
-  //   if (!this.activeTet) return false;
+  isValidBlockTranslation(block: Block, i: number, j: number): boolean {
+    if (!block) return false;
 
-  //   const startKeys = this.activeTet.pos;
-  //   const startCoords = startKeys.map((key) => this.coordinateCache.get(key));
-  //   if (startCoords.some((coord) => !coord)) return false;
+    const startKey = block.pos;
+    const startCoord = this.coordinateCache.get(startKey);
+    if (!startCoord) return false;
 
-  //   return startCoords.every((coord, index) => {
-  //     const newI = coord!.i + i;
-  //     const newJ = coord!.j + j;
+    const newI = startCoord.i + i;
+    const newJ = startCoord.j + j;
 
-  //     if (this.isBlockOutOfBounds(newI, newJ)) return false;
+    if (this.isBlockOutOfBounds(newI, newJ)) return false;
 
-  //     // const height = this.activeTet?.height || 0;
-  //     const height = this.activeTet?.blocks[index].height || 0;
-  //     const relHeight = height - Settings.fallHeight;
-  //     const occupancy = this.getOccupancy(newI, newJ);
-  //     console.log(
-  //       `@${newI}, ${newJ} - Height: ${relHeight}, Occupancy: ${occupancy}`
-  //     );
+    const height = block.height;
+    const occupied = this.isOccupiedAtHeight(newI, newJ, height);
 
-  //     return relHeight >= occupancy;
-  //   });
-  // }
+    return !occupied;
+  }
 
   isValidTetTranslation(di: number, dj: number): boolean {
     if (!this.activeTet) return false;
 
-    const posKeys = this.activeTet.pos;
-    const posCoords = posKeys.map((key) => this.coordinateCache.get(key));
-
-    const newPosCoords = posCoords.map((coord) => {
-      if (!coord) return null;
-      const newI = coord.i + di;
-      const newJ = coord.j + dj;
-
-      if (this.isBlockOutOfBounds(newI, newJ)) return null;
-
-      return this.getOrCreateCoordinate(newI, newJ);
+    const blocks = this.activeTet.blocks;
+    const areValidTranslation = blocks.map((block) => {
+      return this.isValidBlockTranslation(block, di, dj);
     });
 
-    if (newPosCoords.some((coord) => !coord)) return false;
+    console.log(`Valid translation: ${areValidTranslation}`);
 
-    // check if bumping into other blocks
-    // how? for each block, get the occupancy of the new position
-    // if another block is at the same height or higher, return false
-
-    return true; // todo
-
-    // const occupancies = newPosCoords.map((coord, index) => {
-    //   if (!coord) return 0;
-    //   return this.getFirstValidHeight(
-    //     Coordinate.makeKey(coord.i, coord.j),
-    //     this.activeTet?.heights[index]!
-    //   );
-    // });
-
-    // const heights = this.activeTet.heights;
-
-    // console.log(`My heights: ${heights}`);
-
-    // const isValid = heights.every((height, index) => {
-    //   return height >= occupancies[index];
-    // });
-
-    // return isValid;
+    return areValidTranslation.every((isValid) => isValid);
   }
 
+  // isValidTetTranslation(di: number, dj: number): boolean {
+  //   if (!this.activeTet) return false;
+
+  //   const posKeys = this.activeTet.pos;
+  //   const posCoords = posKeys.map((key) => this.coordinateCache.get(key));
+
+  //   const newPosCoords = posCoords.map((coord) => {
+  //     if (!coord) return null;
+  //     const newI = coord.i + di;
+  //     const newJ = coord.j + dj;
+
+  //     if (this.isBlockOutOfBounds(newI, newJ)) return null;
+
+  //     return this.getOrCreateCoordinate(newI, newJ);
+  //   });
+
+  //   if (newPosCoords.some((coord) => !coord)) return false;
+
+  // check if bumping into other blocks
+  // how? for each block, get the occupancy of the new position
+  // if another block is at the same height or higher, return false
+
+  // const occupancies = newPosCoords.map((coord, index) => {
+  //   if (!coord) return 0;
+  //   return this.getFirstValidHeight(
+  //     Coordinate.makeKey(coord.i, coord.j),
+  //     this.activeTet?.heights[index]!
+  //   );
+  // });
+
+  // const heights = this.activeTet.heights;
+
+  // console.log(`My heights: ${heights}`);
+
+  // const isValid = heights.every((height, index) => {
+  //   return height >= occupancies[index];
+  // });
+
+  // return isValid;
+  // }
+
   translateActiveBlock(di: number, dj: number): void {
-    if (!this.activeBlock || !this.isValidBlockTranslation(di, dj)) return;
+    if (!this.activeBlock || !this.isValidActvBlockTranslation(di, dj)) return;
 
     this.activeBlock.translate(di, dj);
 
