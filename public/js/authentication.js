@@ -9,50 +9,78 @@ const Authentication = (function() {
 
     // This function sends a sign-in request to the server
     const signin = function(username, password, onSuccess, onError) {
-        fetch("/auth/login", {
+        const jsonData = JSON.stringify({
+            username: username,
+            password: password
+        });
+
+        fetch("/signin", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ username, password })
+            body: jsonData
         })
-            .then(async (response) => {
-                const data = await response.json();
-
-                // First check the JSON status field
-                if (data.status === "error") {
-                    throw new Error(data.error || "Invalid credentials");
+            .then((res) => {
+                if (!res.ok) throw new Error("Network response was not ok");
+                return res.json();
+            })
+            .then((json) => {
+                if (json.status === "error") {
+                    if (onError) onError(json.error);
+                    return;
                 }
 
-                // Then check HTTP status
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
+                if (json.status === "success") {
+                    user = json.user;  // Store the user object
+                    if (onSuccess) onSuccess();
                 }
-
-                // Finally check for success flag if present
-                if (data.success === false) {
-                    throw new Error(data.message || "Authentication failed");
-                }
-
-                // Store authentication data
-                localStorage.setItem('token', data.token || '');
-                localStorage.setItem('username', username);
-
-                if (onSuccess) onSuccess({ username });
             })
             .catch((error) => {
-                // Clear any authentication data on failure
-                localStorage.removeItem('token');
-                localStorage.removeItem('username');
-
-                if (onError) onError(error.message || "Login failed");
+                if (onError) onError(error.message || "Sign-in failed");
             });
     };
 
+    // This function sends a validate request to the server
+    const validate = function(onSuccess, onError) {
+        //
+        // A. Sending the AJAX request to the server
+        //
+        fetch("/validate", {
+            method: "GET",
+            credentials: "include"  // Important for session cookies
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error("Network response was not ok");
+                return res.json();
+            })
+            .then((json) => {
+                //
+                // C. Processing any error returned by the server
+                //
+                if (json.status === "error") {
+                    user = null;  // Clear any existing user
+                    if (onError) onError(json.error);
+                    return;
+                }
+
+                //
+                // E. Handling the success response from the server
+                //
+                if (json.status === "success") {
+                    user = json.user;  // Update with validated user
+                    if (onSuccess) onSuccess();
+                }
+            })
+            .catch((error) => {
+                user = null;
+                if (onError) onError(error.message || "Validation failed");
+            });
+    };
 
     // This function sends a sign-out request to the server
     const signout = function(onSuccess, onError) {
-        fetch("/auth/logout", {
+        fetch("/signout", {
             method: "GET",
             credentials: "include"  // Important for session cookies
         })
@@ -69,5 +97,5 @@ const Authentication = (function() {
             });
     };
 
-    return { getUser, signin, signout };
+    return { getUser, signin, validate, signout };
 })();

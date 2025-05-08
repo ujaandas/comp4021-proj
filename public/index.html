@@ -1,85 +1,120 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <title>Tetris Multiplayer</title>
+    <title>The Chatroom</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        /* Add these styles for the toggle functionality */
+        .form-section {
+            display: none;
+            width: 100%;
+        }
+
+        .form-section.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toggle-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .toggle-link a {
+            color: #2196F3;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .toggle-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-<div class="background-gradient">
-    <div class="particles"></div>
-    <div class="auth-container">
-        <!-- Combined Auth Form -->
-        <div id="auth-form" class="auth-form">
-            <div class="logo">
-                <span class="logo-tetris">TETRIS</span>
-                <span class="logo-multi">MULTIPLAYER</span>
-            </div>
-
-            <div class="auth-header">
-                <h2 id="auth-title">LOGIN</h2>
-                <button id="toggle-auth-mode" class="toggle-btn">Need to register? <span class="highlight">Sign Up</span></button>
-            </div>
-
-            <form id="auth-submit-form">
-                <div class="form-field" id="name-field" style="display: none;">
-                    <input type="text" id="auth-name" name="name" placeholder="Full Name" class="auth-input">
-                </div>
-
-                <div class="form-field">
-                    <input type="text" id="auth-username" name="username" placeholder="Username" class="auth-input" required>
-                </div>
-
-                <div class="form-field" id="avatar-field" style="display: none;">
-                    <select id="auth-avatar" class="auth-input" name="avatar">
-                        <option value="">Select your avatar</option>
-                    </select>
-<!--                    <div class="avatar-preview-container">
-                        <div id="avatar-preview" class="avatar-preview"></div>
-                    </div>-->
-                </div>
-
-                <div class="form-field">
-                    <input type="password" id="auth-password" name="password" placeholder="Password" class="auth-input" required>
-                </div>
-
-                <div class="form-field" id="password-confirm-field" style="display: none;">
-                    <input type="password" id="auth-password-confirm" name="password_confirm" placeholder="Confirm Password" class="auth-input">
-                </div>
-
-                <div id="auth-extra-fields" class="form-field" style="display: none;">
-                    <!-- Additional fields for registration could go here -->
-                </div>
-
-                <div class="form-field">
-                    <button type="submit" id="auth-submit-btn" class="auth-btn pulse">LOGIN</button>
-                </div>
-
-                <div id="auth-message" class="auth-message"></div>
-            </form>
+<div id="container" class="col">
+    <div id="header" class="row">
+        <div id="title">Tetris Game
+            <span class="material-icons">chat</span>
         </div>
 
-        <!-- Logout Section (initially hidden) -->
-        <div id="logout-section" class="logout-section" style="display: none;">
-            <div class="user-info">
-                <span id="logged-in-user"></span>
-                <button id="logout-btn" class="logout-btn">Logout</button>
+        <div class="spacer-grow"></div>
+
+        <div id="user-panel" class="row">
+            <div class="field-content row shadow">
+                <span class="user-avatar"></span>
+                <span class="user-name">-</span>
             </div>
-            <div id="logout-message" class="auth-message"></div>
+            <button id="signout-button" class="icon"><span class="material-icons">logout</span></button>
+        </div>
+    </div>
+
+    <div id="main-panel" class="row">
+        <div id="online-users-panel" class="col">
+            <div id="online-users-area" class="col"></div>
         </div>
     </div>
 </div>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="/js/registration.js"></script>
-<script src="/js/authentication.js"></script>
-<script src="/js/avatar.js"></script>
-<script src="/js/socket.js"></script>
-<script src="/js/ui.js"></script>
+<div id="signin-overlay" class="overlay row">
+    <div class="content shadow col">
+        <div id="signin-section" class="form-section active">
+            <form id="signin-form" class="col">
+                <div class="caption">SIGN IN TO YOUR ACCOUNT</div>
+                <div class="spacer-0"></div>
+                <input id="signin-username" placeholder="Enter your username">
+                <input id="signin-password" type="password" placeholder="Enter your password">
+                <div class="spacer-0"></div>
+                <button type="submit">Sign In</button>
+                <div id="signin-message" class="warning center"></div>
+            </form>
+            <div class="toggle-link">Don't have an account? <a href="#" id="show-register">Register here</a></div>
+        </div>
+
+        <div id="register-section" class="form-section">
+            <form id="register-form" class="col">
+                <div class="caption">CREATE NEW ACCOUNT</div>
+                <div class="spacer-0"></div>
+                <input id="register-username" maxlength="10" placeholder="Enter username">
+                <select id="register-avatar">
+                    <option value="">Select your avatar</option>
+                </select>
+                <input id="register-name" maxlength="16" placeholder="Enter your display name">
+                <input id="register-password" type="password" placeholder="Create password">
+                <input id="register-confirm" type="password" placeholder="Confirm password">
+                <div class="spacer-0"></div>
+                <button type="submit">Register</button>
+                <div id="register-message" class="warning center"></div>
+            </form>
+            <div class="toggle-link">Already have an account? <a href="#" id="show-signin">Sign in here</a></div>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.min.js"></script>
+<script src="js/socket.js"></script>
+<script src="js/avatar.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/registration.js"></script>
+<script src="js/authentication.js"></script>
 <script>
-    $(function () {
+    $(function() {
+        // Initialize the UI
         UI.initialize();
+
+        // Validate the signin
+        Authentication.validate(
+            () => {
+                SignInForm.hide();
+                UserPanel.update(Authentication.getUser());
+                UserPanel.show();
+                Socket.connect();
+            },
+            () => { SignInForm.show(); }
+        );
     });
 </script>
 </body>

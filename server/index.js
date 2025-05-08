@@ -1,311 +1,249 @@
-import express from "express";
-import session from "express-session";
-import path from "path";
-import { readFileSync, writeFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { hash as _hash, compareSync } from "bcrypt";
-import { createServer } from "http";
-import { Server } from "socket.io";
+const express = require("express");
 
-const filename = fileURLToPath(import.meta.url);
-const dirname = path.dirname(filename);
+const bcrypt = require("bcrypt");
+const fs = require("fs");
+const session = require("express-session");
 
-// Initialize Express app
+// Create the Express app
 const app = express();
-// Serve static files
-app.use(express.static(`${dirname}/../public`));
 
-// Security middleware
+// Use the 'public' folder to serve static files
+app.use(express.static("public"));
+
+// Use the json middleware to parse JSON data
 app.use(express.json());
 
-const usersFilePath = `${dirname}/../data/users.json`;
-
-// Session Configuration
-const sessionConfig = session({
-  secret: "secret-key",
+// Use the session middleware to maintain sessions
+const chatSession = session({
+  secret: "game",
   resave: false,
   saveUninitialized: false,
   rolling: true,
-  cookie: { maxAge: 300000 },
+  cookie: { maxAge: 300000 }
 });
+app.use(chatSession);
 
-app.use(sessionConfig);
-
+// This helper function checks whether the text only contains word characters
 function containWordCharsOnly(text) {
   return /^\w+$/.test(text);
 }
 
-app.post("/auth/register", async (req, res) => {
-  try {
-    const { username, avatar, name, password } = req.body;
+// Handle the /register endpoint
+app.post("/register", (req, res) => {
+  // Get the JSON data from the body
+  const { username, avatar, name, password } = req.body;
 
-    // Read and parse users file
-    const users = JSON.parse(readFileSync(usersFilePath, "utf8"));
+  //
+  // D. Reading the users.json file
+  //
+  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
 
-    if (!username || !avatar || !name || !password) {
-      return res.json({ status: "error", error: "All fields are required" });
-    }
-
-    if (!containWordCharsOnly(username)) {
-      return res.json({
-        status: "error",
-        error: "Username can only contain letters, numbers, or underscores",
-      });
-    }
-
-    if (users[username]) {
-      return res
-        .status(409)
-        .json({ status: "error", error: "Username already exists" });
-    }
-
-    // Hash the password
-    const hash = await _hash(password, 10);
-
-    users[username] = {
-      avatar: avatar,
-      name: name,
-      password: hash, // Store the hashed password, not the plain text
-    };
-
-    // Write updated users back to file
-    writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ status: "error", error: "Registration failed" });
+  //
+  // E. Checking for the user data correctness
+  //
+  // 1. Check if any field is empty
+  if (!username || !avatar || !name || !password) {
+    return res.json({ status: "error", error: "All fields are required" });
   }
-});
 
-app.post("/auth/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const users = JSON.parse(readFileSync("./data/users.json", "utf8"));
-
-    if (!users[username]) {
-      return res.json({
-        status: "error",
-        error: "Invalid username or password",
-      });
-    }
-
-    if (!compareSync(password, users[username].password)) {
-      return res.json({
-        status: "error",
-        error: "Invalid username or password",
-      });
-    }
-
-    const user = {
-      username: username,
-      avatar: users[username].avatar,
-      name: users[username].name,
-    };
-
-    req.session.user = user;
-
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Login failed" });
+  // 2. Check username contains only word characters
+  if (!containWordCharsOnly(username)) {
+    return res.json({
+      status: "error",
+      error: "Username can only contain letters, numbers, or underscores"
+    });
   }
-});
 
-app.post("/auth/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) return res.status(500).json({ error: "Logout failed" });
-    res.clearCookie("connect.sid");
-    res.json({ success: true });
-  });
-});
-
-// Serve the lobby page
-app.get("/lobby", (req, res) => {
-  if (!req.session.user) {
-    return res.redirect("/");
+  // 3. Check if username already exists
+  if (users[username]) {
+    return res.json({ status: "error", error: "Username already exists" });
   }
-  res.sendFile(join(dirname, "../public/lobby.html"));
+
+  //
+  // G. Adding the new user account
+  //
+  // Hash the password before storing
+  const hash = bcrypt.hashSync(password, 10);
+
+  // Create new user object
+  users[username] = {
+    avatar: avatar,
+    name: name,
+    password: hash  // Store the hashed password, not the plain text
+  };
+
+  //
+  // H. Saving the users.json file
+  //
+  fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
+
+  //
+  // I. Sending a success response to the browser
+  //
+  res.json({ status: "success" });
 });
 
-// Serve the game page
-app.get("/game", (req, res) => {
-  if (!req.session.user) {
-    return res.redirect("/");
+// Handle the /signin endpoint
+app.post("/signin", (req, res) => {
+  // Get the JSON data from the body
+  const { username, password } = req.body;
+
+  //
+  // D. Reading the users.json file
+  //
+  const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
+
+  //
+  // E. Checking for username/password
+  //
+  if (!users[username]) {
+    return res.json({ status: "error", error: "Invalid username or password" });
   }
-  res.sendFile(join(dirname, "../public/game.html"));
+
+  if (!bcrypt.compareSync(password, users[username].password)) {
+    return res.json({ status: "error", error: "Invalid username or password" });
+  }
+
+  //
+  // G. Sending a success response with the user account
+  //
+  const user = {
+    username: username,
+    avatar: users[username].avatar,
+    name: users[username].name
+  };
+
+  req.session.user = user;
+
+
+  res.json({ status: "success", user: user });
+
 });
 
-const server = createServer(app);
-const io = new Server(server);
+// Handle the /validate endpoint
+app.get("/validate", (req, res) => {
 
-// Track online players and their status
-const onlinePlayers = new Map();
+  //
+  // B. Getting req.session.user
+  //
+  const user = req.session.user;
 
+  //
+  // D. Sending a success response with the user account
+  //
+  if (user) {
+    res.json({ status: "success", user: user });
+  } else {
+    res.json({ status: "error", error: "No user signed in" });
+  }
+
+});
+
+// Handle the /signout endpoint
+app.get("/signout", (req, res) => {
+
+  //
+  // Deleting req.session.user
+  //
+  delete req.session.user;
+
+  //
+  // Sending a success response
+  //
+  res.json({ status: "success" });
+});
+
+
+// ***** Lab 6 Code - Socket.IO Implementation *****
+
+// Create HTTP server for Socket.IO
+const httpServer = require('http').createServer(app);
+const io = require('socket.io')(httpServer);
+
+// Store online users
+const onlineUsers = {};
+
+// Use session middleware with Socket.IO
 io.use((socket, next) => {
-  sessionConfig(socket.request, {}, next);
+  chatSession(socket.request, {}, next);
 });
 
-io.on("connection", (socket) => {
+// Socket.IO connection handler
+io.on('connection', (socket) => {
+  // Get user from session
   const user = socket.request.session.user;
 
-  if (!user) {
-    return socket.disconnect(true);
-  }
-
-  // When a player enters the lobby
-  socket.on("enter-lobby", () => {
-    // Store socket with player info
-    onlinePlayers.set(user.username, {
-      socketId: socket.id,
-      inGame: false,
+  // Add user to online list if authenticated
+  if (user) {
+    onlineUsers[user.username] = {
       avatar: user.avatar,
-      name: user.name,
+      name: user.name
+    };
+
+    // Broadcast new user to all clients
+    io.emit('add user', JSON.stringify(user));
+    console.log(onlineUsers);
+
+    // Handle get users request
+    socket.on('get users', () => {
+      socket.emit('users', JSON.stringify(onlineUsers));
     });
 
-    // Notify all players about the updated list
-    broadcastOnlinePlayers();
-  });
+    // Handle get messages request
+    socket.on('get messages', () => {
+      const chatroom = JSON.parse(fs.readFileSync('./data/chatroom.json', 'utf8'));
+      socket.emit('messages', JSON.stringify(chatroom));
+    });
 
-  // When a player leaves the lobby
-  socket.on("leave-lobby", () => {
-    if (onlinePlayers.has(user.username)) {
-      onlinePlayers.delete(user.username);
-      broadcastOnlinePlayers();
-    }
-  });
+    // Handle new messages
+    socket.on('post message', (content) => {
+      const chatroom = JSON.parse(fs.readFileSync('./data/chatroom.json', 'utf8'));
 
-  // When a player sends a game request
-  socket.on("game-request", ({ to }) => {
-    const recipient = onlinePlayers.get(to);
-    if (recipient && !recipient.inGame) {
-      io.to(recipient.socketId).emit("game-request", user.username);
-    }
-  });
+      const newMessage = {
+        user: {
+          username: user.username,
+          avatar: user.avatar,
+          name: user.name
+        },
+        datetime: new Date(),
+        content: content
+      };
 
-  // Add this near your onlinePlayers Map
-  const activeGames = new Map();
+      chatroom.push(newMessage);
+      fs.writeFileSync('./data/chatroom.json', JSON.stringify(chatroom, null, 2));
 
-  // Modify the game-accept handler to track the game
-  socket.on("game-accept", ({ to }) => {
-    const initiator = onlinePlayers.get(to);
-    const acceptor = onlinePlayers.get(user.username);
+      // Broadcast new message to all clients
+      io.emit('add message', JSON.stringify(newMessage));
+    });
 
-    if (initiator && acceptor && !initiator.inGame && !acceptor.inGame) {
-      // Create game record
-      const gameId = `${to}-${user.username}-${Date.now()}`;
-      activeGames.set(gameId, {
-        players: [to, user.username],
-        createdAt: Date.now(),
-      });
-
-      // Store game ID with players
-      onlinePlayers.get(user.username).gameId = gameId;
-      onlinePlayers.get(to).gameId = gameId;
-
-      // Mark as in game
-      onlinePlayers.get(user.username).inGame = true;
-      onlinePlayers.get(to).inGame = true;
-
-      // Notify players
-      setTimeout(() => {
-        io.to(initiator.socketId).emit("game-start", {
-          gameId,
-          opponent: user.username,
-          isInitiator: true,
-        });
-
-        io.to(acceptor.socketId).emit("game-start", {
-          gameId,
-          opponent: to,
-          isInitiator: false,
-        });
-      }, 100);
-
-      broadcastOnlinePlayers();
-    }
-  });
-  // When a player declines a game request
-  socket.on("game-decline", ({ to }) => {
-    const initiator = onlinePlayers.get(to);
-    if (initiator) {
-      io.to(initiator.socketId).emit("game-declined", user.username);
-
-      // Ensure both players remain not in game
-      onlinePlayers.get(user.username).inGame = false;
-      if (onlinePlayers.has(to)) {
-        onlinePlayers.get(to).inGame = false;
+    // Handle disconnection
+    socket.on('disconnect', () => {
+      if (user) {
+        delete onlineUsers[user.username];
+        // Broadcast user removal to all clients
+        io.emit('remove user', JSON.stringify(user));
+        console.log(onlineUsers);
       }
+    });
 
-      // Broadcast the updated player list
-      broadcastOnlinePlayers();
-    }
-  });
-
-  // When players leave the game
-  socket.on("leave-game", () => {
-    if (onlinePlayers.has(user.username)) {
-      onlinePlayers.get(user.username).inGame = false;
-      broadcastOnlinePlayers();
-    }
-  });
-
-  // Handle disconnection
-  socket.on("disconnect", (reason) => {
-    if (onlinePlayers.has(user.username)) {
-      console.log(`User ${user.username} disconnected: ${reason}`);
-      const playerData = onlinePlayers.get(user.username);
-      onlinePlayers.delete(user.username);
-
-      // Notify other players if this player was in a game
-      if (playerData.inGame) {
-        io.emit("player-disconnected", user.username);
+    // Handle typing indicator
+    socket.on('typing', () => {
+      if (user) {
+        // Ensure we're sending properly formatted data
+        const typingData = JSON.stringify({
+          user: {
+            username: user.username,
+            avatar: user.avatar,
+            name: user.name
+          }
+        });
+        socket.broadcast.emit('user typing', typingData);
       }
-
-      broadcastOnlinePlayers();
-    }
-  });
-
-  socket.on("heartbeat", () => {
-    // Refresh the player's last active time
-    if (user && onlinePlayers.has(user.username)) {
-      onlinePlayers.get(user.username).lastActive = Date.now();
-    }
-  });
-
-  socket.on("error", (error) => {
-    console.log(`Socket error for ${user.username}:`, error);
-  });
-
-  function broadcastOnlinePlayers() {
-    const playersList = Array.from(onlinePlayers.entries()).map(
-      ([username, data]) => ({
-        username,
-        avatar: data.avatar,
-        name: data.name,
-        inGame: data.inGame,
-      })
-    );
-    io.emit("online-players", playersList);
+    });
   }
-
-  app.get("/api/game-status", (req, res) => {
-    if (!req.session.user) {
-      return res.redirect("/");
-    }
-
-    const player = onlinePlayers.get(req.session.user.username);
-    res.json({
-      inGame: player?.inGame || false,
-      opponent: player?.gameId
-        ? activeGames
-            .get(player.gameId)
-            .players.find((p) => p !== req.session.user.username)
-        : null,
-    });
-  });
 });
 
-const PORT = process.env.PORT || 8000;
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Change app.listen to httpServer.listen
+httpServer.listen(8000, () => {
+  console.log("The chat server has started...");
 });
