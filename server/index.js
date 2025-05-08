@@ -168,6 +168,7 @@ io.on("connection", (socket) => {
       inGame: false,
       avatar: user.avatar,
       name: user.name,
+      gameId: null,
     });
 
     // Notify all players about the updated list
@@ -251,6 +252,64 @@ io.on("connection", (socket) => {
     if (onlinePlayers.has(user.username)) {
       onlinePlayers.get(user.username).inGame = false;
       broadcastOnlinePlayers();
+    }
+  });
+
+  socket.on("updateGameState", (data) => {
+    const player = onlinePlayers.get(user.username);
+    if (player && player.gameId) {
+      const game = activeGames.get(player.gameId);
+      if (game) {
+        const opponentName = game.players.find(
+          (uname) => uname !== user.username
+        );
+        const opponent = onlinePlayers.get(opponentName);
+        if (opponent) {
+          io.to(opponent.socketId).emit("opponentGameState", data);
+        }
+      }
+    }
+  });
+
+  socket.on("addLayers", ({ layers }) => {
+    const player = onlinePlayers.get(user.username);
+    if (player && player.gameId) {
+      const game = activeGames.get(player.gameId);
+      if (game) {
+        const opponentName = game.players.find(
+          (uname) => uname !== user.username
+        );
+        const opponent = onlinePlayers.get(opponentName);
+        if (opponent) {
+          io.to(opponent.socketId).emit("addLayers", { layers });
+        }
+      }
+    }
+  });
+
+  socket.on("gameOver", () => {
+    const player = onlinePlayers.get(user.username);
+    if (player && player.gameId) {
+      const game = activeGames.get(player.gameId);
+      if (game) {
+        const opponentName = game.players.find(
+          (uname) => uname !== user.username
+        );
+        const opponent = onlinePlayers.get(opponentName);
+        if (opponent) {
+          io.to(opponent.socketId).emit("opponentGameOver", {
+            player: user.username,
+          });
+        }
+        activeGames.delete(player.gameId);
+        onlinePlayers.get(user.username).inGame = false;
+        onlinePlayers.get(user.username).gameId = null;
+        if (opponent) {
+          onlinePlayers.get(opponentName).inGame = false;
+          onlinePlayers.get(opponentName).gameId = null;
+        }
+        broadcastOnlinePlayers();
+      }
     }
   });
 

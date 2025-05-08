@@ -589,4 +589,13 @@ export class Tileset {
       this.activeTetGhost = new GhostTetromino(this.activeTet, lowestHeight);
     }
   }
+
+  set placedBlocks(blocks: Block[]) {
+    this._placedBlocks = blocks;
+  }
+
+  set activeTet(tet: Tetromino) {
+    this.activeTet = tet;
+    this.activeTetIndex = 0;
+  }
 }
