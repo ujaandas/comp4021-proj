@@ -11,7 +11,6 @@ export class Tileset {
   private blocks: Block[] = [];
   private tets: Tetromino[] = [];
   private _placedBlocks: Block[] = [];
-  private _placedTets: Tetromino[] = [];
   private activeBlockIndex: number = 0;
   private activeTetIndex: number = 0;
   public activeBlockGhost: GhostBlock | null = null;
@@ -104,10 +103,6 @@ export class Tileset {
 
   get placedBlocks(): Block[] {
     return this._placedBlocks;
-  }
-
-  get placedTets(): Tetromino[] {
-    return this._placedTets;
   }
 
   initBlockMode(): void {
@@ -342,10 +337,6 @@ export class Tileset {
       return false;
     }
 
-    console.log(
-      `At ${projectedKey} - Height: ${height}, Occupancy: ${occupied}`
-    );
-
     return true;
   }
 
@@ -454,6 +445,62 @@ export class Tileset {
     }
   }
 
+  isLayerClearable(height: number): boolean {
+    // go through placedTets, get all blocks and filter by occupancy at height
+    const blocksAtHeight = this._placedBlocks.filter((block) => {
+      const occupancy = this.isOccupiedAtKeyAtHeight(block.pos, height);
+      return occupancy;
+    });
+
+    // console.log(
+    //   `Blocks at height ${height}: ${blocksAtHeight.length} vs ${
+    //     (this.gameH - 1) * (this.gameW - 1)
+    //   }`
+    // );
+
+    return blocksAtHeight.length >= (this.gameH - 1) * (this.gameW - 1);
+  }
+
+  areAnyLayersClearable(): number {
+    // find highest layer
+    const maxHeight = Math.max(
+      ...this._placedBlocks.map((block) => block.height)
+    );
+    console.log(maxHeight);
+
+    // check if any layer is clearable
+    for (let i = 0; i <= maxHeight; i++) {
+      if (this.isLayerClearable(i)) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  private clearLayer(layer: number): void {
+    // remove all blocks at layer
+    const blocksToClear = this._placedBlocks.filter(
+      (block) => block.height === layer
+    );
+
+    blocksToClear.forEach((block) => {
+      const node = this.adj.get(block.pos);
+      if (node) {
+        node.clearOccupancyAtHeight(layer);
+      }
+    });
+
+    console.log(`Clearing layer ${layer}`);
+    console.log(`Placed blocks before: ${this._placedBlocks.length}`);
+
+    this._placedBlocks = this._placedBlocks.filter(
+      (block) => block.height !== layer
+    );
+
+    console.log(`Placed blocks after: ${this._placedBlocks.length}`);
+  }
+
   placeTet(tet: Tetromino): void {
     const projectedKeys = tet.pos;
 
@@ -461,7 +508,15 @@ export class Tileset {
       this.placeBlock(tet.blocks[index]);
     });
 
-    this._placedTets.push(tet);
+    const clearable = this.areAnyLayersClearable();
+
+    if (clearable !== -1) {
+      this.clearLayer(clearable);
+    }
+  }
+
+  getRenderableBlocks(): Block[] {
+    return this._placedBlocks.map((block) => block.clone());
   }
 
   private setNextActiveBlock(): void {

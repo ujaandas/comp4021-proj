@@ -17,4 +17,8 @@ export class GNode {
   setOccupiedAtHeight(height: number): void {
     this.occupancy.set(height, true);
   }
+
+  clearOccupancyAtHeight(height: number): void {
+    this.occupancy.set(height, false);
+  }
 }

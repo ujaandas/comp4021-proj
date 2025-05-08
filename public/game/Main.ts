@@ -1,7 +1,7 @@
 import { Block } from "./components/Block.js";
 import { GhostTetromino, Tetromino } from "./components/Tetromino.js";
 import { InputHandler } from "./utils/InputHandler.js";
-import { RenderableTet, Renderer } from "./render/Renderer.js";
+import { Renderable, Renderer } from "./render/Renderer.js";
 import { Tileset } from "./tileset/Tileset.js";
 import { Camera } from "./utils/Camera.js";
 import { Settings } from "./utils/Settings.js";
@@ -28,24 +28,43 @@ window.onload = function () {
   inputHandler.bindDefaultCameraControls();
   inputHandler.bindDefaultMovementControls();
 
-  const block1 = Block.makeBlockOnPoint(5, 5, 2);
-  const block2 = Block.makeBlockOnPoint(5, 4);
-  const block3 = Block.makeBlockOnPoint(5, 4, 1);
-  const block4 = Block.makeBlockOnPoint(5, 4, 2);
+  // const block1 = Block.makeBlockOnPoint(5, 5, 2);
+  // const block2 = Block.makeBlockOnPoint(5, 4);
+  // const block3 = Block.makeBlockOnPoint(5, 4, 1);
+  // const block4 = Block.makeBlockOnPoint(5, 4, 2);
 
-  const block5 = Block.makeBlockOnPoint(5, 5);
-  const block6 = Block.makeBlockOnPoint(8, 5);
+  // const block5 = Block.makeBlockOnPoint(5, 5);
+  // const block6 = Block.makeBlockOnPoint(8, 5);
+
+  // const tet1 = new Tetromino(
+  //   [block1, block2, block3, block4],
+  //   Colour.getColour("red")
+  // );
+  // const tet2 = tet1.clone();
+  // const tet3 = new Tetromino([block5], Colour.getColour("blue"));
+
+  // tileset.addTet(tet1);
+  // tileset.addTet(tet2);
+  // tileset.addTet(tet3);
+
+  const block1 = Block.makeBlockOnPoint(1, 1);
+  const block2 = Block.makeBlockOnPoint(2, 1);
+  const block3 = Block.makeBlockOnPoint(1, 2);
+  const block4 = Block.makeBlockOnPoint(2, 2);
 
   const tet1 = new Tetromino(
     [block1, block2, block3, block4],
     Colour.getColour("red")
   );
   const tet2 = tet1.clone();
-  const tet3 = new Tetromino([block5], Colour.getColour("blue"));
+  const tet3 = tet2.clone();
+  const tet4 = tet3.clone();
 
   tileset.addTet(tet1);
   tileset.addTet(tet2);
   tileset.addTet(tet3);
+  tileset.addTet(tet4);
+  tileset.addTet(tet1.clone());
 
   tileset.initTetMode();
 
@@ -64,18 +83,19 @@ window.onload = function () {
 
     renderer.renderTiles(tileset.adj, camera.angle);
 
-    const renderQueue: RenderableTet[] = [];
+    const renderQueue: Renderable[] = [];
 
-    tileset.placedTets.forEach((tet) => {
+    tileset.placedBlocks.forEach((block) => {
       renderQueue.push({
-        tet,
+        active: block,
         isActive: false,
-        depth: renderer.getTetDepth(tet, camera.angle),
+        depth: renderer.getBlockDepth(block, camera.angle),
       });
     });
 
     if (tileset.activeTet) {
       let activeDepth = renderer.getTetDepth(tileset.activeTet, camera.angle);
+
       if (tileset.activeTetGhost) {
         const ghostDepth = renderer.getTetDepth(
           tileset.activeTetGhost,
@@ -83,8 +103,9 @@ window.onload = function () {
         );
         activeDepth = Math.max(activeDepth, ghostDepth);
       }
+
       renderQueue.push({
-        tet: tileset.activeTet,
+        active: tileset.activeTet,
         ghost: tileset.activeTetGhost ?? undefined,
         isActive: true,
         depth: activeDepth,
@@ -94,10 +115,14 @@ window.onload = function () {
     renderQueue.sort((a, b) => a.depth - b.depth);
 
     renderQueue.forEach((item) => {
-      if (item.isActive) {
-        renderer.renderTetAndGhost(item.tet, camera.angle, item.ghost);
-      } else {
-        renderer.renderTet(item.tet, camera.angle);
+      if (
+        item.isActive &&
+        item.active instanceof Tetromino &&
+        item.ghost instanceof GhostTetromino
+      ) {
+        renderer.renderTetAndGhost(item.active, camera.angle, item.ghost);
+      } else if (item.active instanceof Block) {
+        renderer.renderBlock(item.active, camera.angle);
       }
     });
 

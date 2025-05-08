@@ -5,9 +5,9 @@ import { Wall } from "../components/Wall.js";
 import { GNode } from "../tileset/GNode.js";
 import { Settings } from "../utils/Settings.js";
 
-export interface RenderableTet {
-  tet: Tetromino;
-  ghost?: GhostTetromino;
+export interface Renderable {
+  active: Block | Tetromino;
+  ghost?: GhostBlock | GhostTetromino;
   isActive: boolean;
   depth: number;
 }
@@ -70,6 +70,10 @@ export class Renderer {
   renderBlock(block: Block, angle: number): void {
     block.walls.forEach((wall) => this.paintWall(wall, angle));
     this.paintLid(block, angle);
+  }
+
+  renderBlocks(blocks: Block[], angle: number): void {
+    blocks.forEach((block) => this.renderBlock(block, angle));
   }
 
   renderTet(tet: Tetromino, angle: number): void {
@@ -146,6 +150,19 @@ export class Renderer {
       const pos = Coordinate.fromKey(posKey);
       const screenPos = this.gridToScreen(pos.i, pos.j, 0, cameraAngle);
       return screenPos.y;
+    });
+    return Math.max(...depths);
+  }
+
+  getBlockDepth(block: Block, cameraAngle: number): number {
+    const depths = block.walls.map((wall) => {
+      const start = this.gridToScreen(
+        wall.start.i,
+        wall.start.j,
+        wall.height,
+        cameraAngle
+      );
+      return start.y;
     });
     return Math.max(...depths);
   }
