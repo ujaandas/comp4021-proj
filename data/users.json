@@ -7,5 +7,20 @@
     "avatar": "Turkey",
     "name": "test",
     "password": "$2b$10$XA4oXS5oVJNASyjcqWmCSODjxkuCGQTmdIPBIj2T1Bu4flK.lwkIW"
+  },
+  "kat": {
+    "avatar": "Hamster",
+    "name": "kat",
+    "password": "$2b$10$cnMoF4AGnApegwRXyiWVhOjKTJvGwW0jEobq2OuJ4VtPXz6/jCrR2"
+  },
+  "hat": {
+    "avatar": "Rabbit Face",
+    "name": "hat",
+    "password": "$2b$10$.f236Hdn.Qle4RhI8S1acOmThu8klQgfwvd7WAzWdsOiXoQCFOjoe"
+  },
+  "jat": {
+    "avatar": "Hamster",
+    "name": "jat",
+    "password": "$2b$10$ttne0yKqVufgUH/IJwC28.nIOiuuZEPPt6o/VVOJrwa3JCxYpOs9q"
   }
 }
