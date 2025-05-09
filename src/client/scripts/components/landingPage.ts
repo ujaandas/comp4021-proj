@@ -7,9 +7,9 @@ export function renderLandingPage(onPlayClicked: () => void) {
         Rotate and place the falling blocks to complete layers.
       </div>
       <div class="instructions">
-        <div class="instruction-item">← → : Move</div>
-        <div class="instruction-item">↑ : Rotate</div>
-        <div class="instruction-item">↓ : Speed Up</div>
+        <div class="instruction-item">WASD : Move</div>
+        <div class="instruction-item">← → : Rotate</div>
+        <div class="instruction-item">C : ???</div>
         <div class="instruction-item">Space : Drop</div>
       </div>
       <button id="play-button" class="neon-button">
