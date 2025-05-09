@@ -8,6 +8,7 @@ import { TetrominoGenerator } from "./game/utils/TetGenerator";
 import { io } from "socket.io-client";
 import { Block } from "./game/components/Block";
 import { Tetromino } from "./game/components/Tetromino";
+import music from "./game/assets/tetris.mp3";
 
 export function renderGamePage(myUsername: string) {
   const appDiv = document.getElementById("app") as HTMLDivElement;
@@ -51,6 +52,14 @@ export function renderGamePage(myUsername: string) {
   }
 
   const socket = io();
+
+  const backgroundMusic = new Audio(music);
+  backgroundMusic.loop = true;
+  backgroundMusic.volume = 0.3;
+
+  backgroundMusic
+    .play()
+    .catch((err) => console.error("Error playing background music:", err));
 
   const tetQueue: Tetromino[] = [
     TetrominoGenerator.getRandomTetromino(),
@@ -172,13 +181,13 @@ export function renderGamePage(myUsername: string) {
       camera.angle
     );
 
-    opponentRenderer.renderTiles(localTileset.adj, Settings.initialAngle);
-    opponentRenderer.renderWalls2(
-      opponentBlocks,
-      null,
-      null,
-      Settings.initialAngle
-    );
+    // opponentRenderer.renderTiles(localTileset.adj, Settings.initialAngle);
+    // opponentRenderer.renderWalls2(
+    //   opponentBlocks,
+    //   null,
+    //   null,
+    //   Settings.initialAngle
+    // );
 
     gameTimer.update();
     requestAnimationFrame(render);

@@ -7,10 +7,9 @@ export class TetrominoGenerator {
   static createI(): Tetromino {
     const { i, j } = Settings.spawnPoint;
     const blocks = [
-      Block.makeBlockOnPoint(i - 1, j),
       Block.makeBlockOnPoint(i, j),
-      Block.makeBlockOnPoint(i + 1, j),
-      Block.makeBlockOnPoint(i + 2, j),
+      Block.makeBlockOnPoint(i, j, 1),
+      Block.makeBlockOnPoint(i, j, 2),
     ];
     return new Tetromino(blocks, Colour.random(), "I");
   }
@@ -18,10 +17,10 @@ export class TetrominoGenerator {
   static createJ(): Tetromino {
     const { i, j } = Settings.spawnPoint;
     const blocks = [
-      Block.makeBlockOnPoint(i - 1, j - 1),
-      Block.makeBlockOnPoint(i - 1, j),
+      Block.makeBlockOnPoint(i, j - 1),
       Block.makeBlockOnPoint(i, j),
-      Block.makeBlockOnPoint(i + 1, j),
+      Block.makeBlockOnPoint(i, j, 1),
+      Block.makeBlockOnPoint(i, j, 2),
     ];
     return new Tetromino(blocks, Colour.random(), "J");
   }
@@ -29,10 +28,10 @@ export class TetrominoGenerator {
   static createL(): Tetromino {
     const { i, j } = Settings.spawnPoint;
     const blocks = [
-      Block.makeBlockOnPoint(i + 1, j - 1),
       Block.makeBlockOnPoint(i - 1, j),
       Block.makeBlockOnPoint(i, j),
-      Block.makeBlockOnPoint(i + 1, j),
+      Block.makeBlockOnPoint(i, j, 1),
+      Block.makeBlockOnPoint(i, j, 2),
     ];
     return new Tetromino(blocks, Colour.random(), "L");
   }
@@ -62,10 +61,10 @@ export class TetrominoGenerator {
   static createT(): Tetromino {
     const { i, j } = Settings.spawnPoint;
     const blocks = [
-      Block.makeBlockOnPoint(i, j - 1),
-      Block.makeBlockOnPoint(i - 1, j),
       Block.makeBlockOnPoint(i, j),
-      Block.makeBlockOnPoint(i + 1, j),
+      Block.makeBlockOnPoint(i, j, 1),
+      Block.makeBlockOnPoint(i + 1, j, 1),
+      Block.makeBlockOnPoint(i, j + 1, 1),
     ];
     return new Tetromino(blocks, Colour.random(), "T");
   }
