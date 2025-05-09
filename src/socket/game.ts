@@ -31,15 +31,17 @@ export default function gameHandler(io: SocketIOServer) {
       );
     });
 
-    socket.on("gameOver", () => {
-      console.log(`Game over emitted`);
-      socket.broadcast.emit("gameOver", { username });
-    });
+    socket.on(
+      "gameOver",
+      (data: { username: string; myScore: number; opponentScore: number }) => {
+        console.log(`Game over emitted by ${data.username}`);
 
-    socket.on("winGame", () => {
-      console.log(`Win game emitted`);
-      socket.broadcast.emit("winGame", { username });
-    });
+        socket.broadcast.emit("gameOver", {
+          winner: data.myScore > data.opponentScore,
+          ...data,
+        });
+      }
+    );
 
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${username}`);

@@ -1,6 +1,7 @@
 import { Block, GhostBlock } from "../components/Block.js";
 import { Coordinate } from "../components/Coordinate.js";
 import { GhostTetromino, Tetromino } from "../components/Tetromino.js";
+import { Colour } from "../utils/Colour.js";
 import { Settings } from "../utils/Settings.js";
 import { GEdge } from "./GEdge.js";
 import { GNode } from "./GNode.js";
@@ -589,6 +590,7 @@ export class Tileset {
     projectedKeys.forEach((_, index) => {
       this.placeBlock(tet.blocks[index]);
       this.score += 10 * (index + 1);
+      this.score -= 3 * tet.blocks[index].height;
     });
 
     const clearable = this.areAnyLayersClearable();
@@ -628,6 +630,27 @@ export class Tileset {
         firstValidHeight
       );
     }
+  }
+
+  // add layer filled w holes to troll ppl
+  addTrollLayer(n: number): void {
+    const trollLayer = Math.floor(Math.random() * this.gameH);
+    const trollLayerBlocks: Block[] = [];
+
+    for (let i = 0; i < n; i++) {
+      const x = Math.floor(Math.random() * this.gameW);
+      const y = trollLayer;
+
+      const block = Block.makeBlockOnPoint(
+        x,
+        y,
+        this.getFirstValidHeight(Coordinate.makeKey(x, y)),
+        Colour.random()
+      );
+      trollLayerBlocks.push(block);
+    }
+
+    this._placedBlocks.push(...trollLayerBlocks);
   }
 
   private setNextGhostTet(): void {

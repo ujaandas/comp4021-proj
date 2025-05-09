@@ -6,7 +6,11 @@ export class InputHandler {
   private keyActions: Map<string, () => void> = new Map();
   private rotationSnap: number = 45;
 
-  constructor(private camera: Camera, private tileset: Tileset) {
+  constructor(
+    private camera: Camera,
+    private tileset: Tileset,
+    private trollCallback?: () => void
+  ) {
     window.addEventListener("keydown", (e) => {
       const action = this.keyActions.get(e.key.toLowerCase());
       if (e.repeat) return;
@@ -64,8 +68,12 @@ export class InputHandler {
       this.tileset.translateActiveTet(dx, dy);
     });
 
-    this.bindKey(" ", () => {
+    this.bindKey("x", () => {
       this.tileset.quickDropActiveTet();
+    });
+
+    this.bindKey("y", () => {
+      this.trollCallback?.();
     });
 
     this.bindKey("r", () => {
