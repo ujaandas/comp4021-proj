@@ -1,24 +1,20 @@
-import express from "express";
-import session from "express-session";
-import path from "path";
-import { readFileSync, writeFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { hash as _hash, compareSync } from "bcrypt";
-import { createServer } from "http";
-import { Server } from "socket.io";
+const express = require("express");
+const bcrypt = require("bcrypt");
+const fs = require("fs");
+const path = require("path");
+const session = require("express-session");
 
-const filename = fileURLToPath(import.meta.url);
-const dirname = path.dirname(filename);
-
+const _dirname = path.resolve(); // Gets the current directory
+console.log(_dirname)
 // Initialize Express app
 const app = express();
 // Serve static files
-app.use(express.static(`${dirname}/../public`));
+app.use(express.static(`${_dirname}/public`));
 
 // Security middleware
 app.use(express.json());
 
-const usersFilePath = `${dirname}/../data/users.json`;
+const usersFilePath = `${_dirname}/data/users.json`;
 
 // Session Configuration
 const sessionConfig = session({
@@ -27,6 +23,7 @@ const sessionConfig = session({
   saveUninitialized: false,
   rolling: true,
   cookie: { maxAge: 300000 },
+  sameSite: "lax"
 });
 
 app.use(sessionConfig);
@@ -40,7 +37,7 @@ app.post("/auth/register", async (req, res) => {
     const { username, avatar, name, password } = req.body;
 
     // Read and parse users file
-    const users = JSON.parse(readFileSync(usersFilePath, "utf8"));
+    const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
 
     if (!username || !avatar || !name || !password) {
       return res.json({ status: "error", error: "All fields are required" });
@@ -60,7 +57,7 @@ app.post("/auth/register", async (req, res) => {
     }
 
     // Hash the password
-    const hash = await _hash(password, 10);
+    const hash = await bcrypt.hashSync(password, 10);
 
     users[username] = {
       avatar: avatar,
@@ -69,7 +66,7 @@ app.post("/auth/register", async (req, res) => {
     };
 
     // Write updated users back to file
-    writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
 
     res.json({ success: true });
   } catch (err) {
@@ -81,7 +78,7 @@ app.post("/auth/register", async (req, res) => {
 app.post("/auth/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const users = JSON.parse(readFileSync("./data/users.json", "utf8"));
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
 
     if (!users[username]) {
       return res.json({
@@ -90,7 +87,7 @@ app.post("/auth/login", async (req, res) => {
       });
     }
 
-    if (!compareSync(password, users[username].password)) {
+    if (!bcrypt.compareSync(password, users[username].password)) {
       return res.json({
         status: "error",
         error: "Invalid username or password",
@@ -124,7 +121,7 @@ app.get("/lobby", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/");
   }
-  res.sendFile(join(dirname, "../public/lobby.html"));
+  res.sendFile(path.join(_dirname, "/public/lobby.html"));
 });
 
 // Serve the game page
@@ -132,11 +129,17 @@ app.get("/game", (req, res) => {
   if (!req.session.user) {
     return res.redirect("/");
   }
-  res.sendFile(join(dirname, "../public/game.html"));
+  res.sendFile(path.join(_dirname, "/public/game.html"));
 });
 
-const server = createServer(app);
-const io = new Server(server);
+const httpServer = require('http').createServer(app);
+const io = require('socket.io')(httpServer, {
+  pingInterval: 30000,
+  pingTimeout: 20000,
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 120000
+  }
+});
 
 // Track online players and their status
 const onlinePlayers = new Map();
@@ -145,16 +148,68 @@ io.use((socket, next) => {
   sessionConfig(socket.request, {}, next);
 });
 
+const activeGames = new Map();
+
 io.on("connection", (socket) => {
   const user = socket.request.session.user;
-
+  console.log("user" + user);
   if (!user) {
     return socket.disconnect(true);
   }
 
+  socket.username = user.username;
+
+  const prevSessionId = socket.handshake.auth.sessionId;
+  if (prevSessionId) {
+    // Reattach to previous session
+    socket.join(prevSessionId);
+  }
+
+  socket.on('game-ready-to-start', ({ opponent }) => {
+    // Find game where these two players are matched
+    const game = Array.from(activeGames.values()).find(g =>
+        g.players.includes(socket.username) &&
+        g.players.includes(opponent)
+    );
+
+    if (!game) {
+      return socket.emit('game-error', 'Game not found');
+    }
+
+    // Mark player as ready
+    game.readyPlayers.add(socket.username);
+
+    // If both ready, redirect
+    if (game.readyPlayers.size === 2) {
+      // Store game ID in session
+      game.sockets.forEach(sockId => {
+        io.to(sockId).emit('redirect-to-game', {
+          gameId: game.gameId
+        });
+      });
+
+      activeGames.delete(game.gameId);
+    }
+  });
+
+  socket.on('player-ready', ({ gameId }) => {
+    const game = activeGames.get(gameId);
+    if (game) {
+      game.readyPlayers.add(socket.username);
+
+      // If both players are ready
+      if (game.readyPlayers.size === 2) {
+        io.to(gameId).emit('redirect-to-game', { gameId });
+        activeGames.delete(gameId);
+      }
+    }
+  });
+
   // When a player enters the lobby
   socket.on("enter-lobby", () => {
-    // Store socket with player info
+    // Join a room with the username
+    socket.join(user.username);
+
     onlinePlayers.set(user.username, {
       socketId: socket.id,
       inGame: false,
@@ -162,7 +217,6 @@ io.on("connection", (socket) => {
       name: user.name,
     });
 
-    // Notify all players about the updated list
     broadcastOnlinePlayers();
   });
 
@@ -182,44 +236,33 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Add this near your onlinePlayers Map
-  const activeGames = new Map();
-
   // Modify the game-accept handler to track the game
+
   socket.on("game-accept", ({ to }) => {
     const initiator = onlinePlayers.get(to);
     const acceptor = onlinePlayers.get(user.username);
 
-    if (initiator && acceptor && !initiator.inGame && !acceptor.inGame) {
-      // Create game record
-      const gameId = `${to}-${user.username}-${Date.now()}`;
+    if (initiator && acceptor) {
+      // Create consistent game ID
+      const gameId = `game-${[to, user.username].sort().join('-')}-${Date.now()}`;
+
+      // Mark both players as in game
+      onlinePlayers.get(to).inGame = true;
+      onlinePlayers.get(user.username).inGame = true;
+
+      // Create game entry
       activeGames.set(gameId, {
         players: [to, user.username],
-        createdAt: Date.now(),
+        gameId: gameId
       });
 
       // Store game ID with players
-      onlinePlayers.get(user.username).gameId = gameId;
       onlinePlayers.get(to).gameId = gameId;
+      onlinePlayers.get(user.username).gameId = gameId;
 
-      // Mark as in game
-      onlinePlayers.get(user.username).inGame = true;
-      onlinePlayers.get(to).inGame = true;
-
-      // Notify players
-      setTimeout(() => {
-        io.to(initiator.socketId).emit("game-start", {
-          gameId,
-          opponent: user.username,
-          isInitiator: true,
-        });
-
-        io.to(acceptor.socketId).emit("game-start", {
-          gameId,
-          opponent: to,
-          isInitiator: false,
-        });
-      }, 100);
+      // Notify both players and redirect immediately
+      io.to(initiator.socketId).emit("redirect-to-game", { gameId });
+      io.to(acceptor.socketId).emit("redirect-to-game", { gameId });
 
       broadcastOnlinePlayers();
     }
@@ -265,13 +308,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("heartbeat", () => {
-    // Refresh the player's last active time
-    if (user && onlinePlayers.has(user.username)) {
-      onlinePlayers.get(user.username).lastActive = Date.now();
-    }
-  });
-
   socket.on("error", (error) => {
     console.log(`Socket error for ${user.username}:`, error);
   });
@@ -303,9 +339,23 @@ io.on("connection", (socket) => {
         : null,
     });
   });
+  socket.on("disconnect", (reason) => {
+    console.log(`[SERVER] Disconnected ${socket.id}: ${reason}`);
+  });
 });
 
+function findSocketByUsername(username) {
+  const sockets = io.of("/").sockets; // Gets all connected sockets
+
+  for (const [id, socket] of sockets) {
+    if (socket.username === username) {
+      return socket;
+    }
+  }
+  return null; // Explicit return if not found
+}
+
 const PORT = process.env.PORT || 8000;
-server.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
