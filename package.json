@@ -18,6 +18,7 @@
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.17",
     "@types/node": "^18.15.11",
     "concurrently": "^8.2.2",

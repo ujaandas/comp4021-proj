@@ -1,8 +1,9 @@
 import { io, Socket } from "socket.io-client";
+import { renderGamePage } from "./gamePage";
 
 let socket: Socket;
 
-interface ILobby {
+export interface ILobby {
   id: string;
   player1: string;
   player2: string | null;
@@ -19,26 +20,18 @@ export function renderLobby(userName: string, onLogout: () => void) {
   `;
   const appDiv = document.getElementById("app") as HTMLDivElement;
   appDiv.innerHTML = html;
-
   socket = io();
-
   socket.on("lobbyList", (lobbies: Array<ILobby>) => {
-    renderLobbyList(lobbies);
+    renderLobbyList(lobbies, userName, onLogout);
   });
-
   const createBtn = document.getElementById(
     "create-lobby"
   ) as HTMLButtonElement;
   createBtn.addEventListener("click", () => {
-    console.log("Creating lobby...");
-    socket.emit(
-      "createLobby",
-      (lobby: { id: string; player1: string; player2: string | null }) => {
-        showLobbyView(lobby);
-      }
-    );
+    socket.emit("createLobby", (lobby: ILobby) => {
+      showLobbyView(lobby, userName, onLogout);
+    });
   });
-
   const logoutBtn = document.getElementById(
     "logout-button"
   ) as HTMLButtonElement;
@@ -56,17 +49,15 @@ export function renderLobby(userName: string, onLogout: () => void) {
       alert("Error during logout.");
     }
   });
-
-  socket.on(
-    "lobbyJoined",
-    (lobby: { id: string; player1: string; player2: string | null }) => {
-      showLobbyView(lobby);
-    }
-  );
+  socket.on("lobbyJoined", (lobby: ILobby) => {
+    showLobbyView(lobby, userName, onLogout);
+  });
 }
 
 function renderLobbyList(
-  lobbies: Array<{ id: string; player1: string; player2: string | null }>
+  lobbies: Array<ILobby>,
+  userName: string,
+  onLogout: () => void
 ) {
   const container = document.getElementById("available-lobbies");
   if (!container) return;
@@ -74,34 +65,33 @@ function renderLobbyList(
   lobbies.forEach((lobby) => {
     const lobbyDiv = document.createElement("div");
     lobbyDiv.textContent = `Lobby ${lobby.id} | Host: ${lobby.player1}`;
-
     const joinBtn = document.createElement("button");
     joinBtn.textContent = "Join Lobby";
     joinBtn.addEventListener("click", () => {
-      joinLobby(lobby.id);
+      joinLobby(lobby.id, userName, onLogout);
     });
-
     lobbyDiv.appendChild(joinBtn);
     container.appendChild(lobbyDiv);
   });
 }
 
-function joinLobby(lobbyId: string) {
+function joinLobby(lobbyId: string, userName: string, onLogout: () => void) {
   socket.emit("joinLobby", lobbyId, (lobby: ILobby | null) => {
     if (lobby) {
-      showLobbyView(lobby);
+      showLobbyView(lobby, userName, onLogout);
     } else {
       alert("Unable to join lobby or lobby is full.");
     }
   });
 }
 
-function showLobbyView(lobby: {
-  id: string;
-  player1: string;
-  player2: string | null;
-}) {
+function showLobbyView(lobby: ILobby, userName: string, onLogout: () => void) {
   const appDiv = document.getElementById("app") as HTMLDivElement;
+  let buttonsHtml = "";
+  if (lobby.player2 !== null && lobby.player1 === userName) {
+    buttonsHtml += `<button id="start-game">Start Game!</button>`;
+  }
+  buttonsHtml += `<button id="leave-lobby">Leave Lobby</button>`;
   appDiv.innerHTML = `
     <div class="lobby-view">
       <h2>Lobby ${lobby.id}</h2>
@@ -109,6 +99,29 @@ function showLobbyView(lobby: {
       <p>Player 2: ${
         lobby.player2 ? lobby.player2 : "Waiting for player 2..."
       }</p>
+      ${buttonsHtml}
     </div>
   `;
+  const startGameBtn = document.getElementById(
+    "start-game"
+  ) as HTMLButtonElement;
+  if (startGameBtn) {
+    startGameBtn.addEventListener("click", () => {
+      socket.emit("startGame", lobby.id);
+      renderGamePage();
+    });
+  }
+  const leaveLobbyBtn = document.getElementById(
+    "leave-lobby"
+  ) as HTMLButtonElement;
+  leaveLobbyBtn.addEventListener("click", () => {
+    socket.emit("leaveLobby", lobby.id, (success: boolean) => {
+      if (success) {
+        socket.emit("getLobbyList");
+        renderLobby(userName, onLogout);
+      } else {
+        alert("Could not leave lobby.");
+      }
+    });
+  });
 }

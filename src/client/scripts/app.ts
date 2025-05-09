@@ -1,5 +1,5 @@
 import { renderLandingPage } from "./components/landingPage.js";
-import { showAuthPopup } from "./components/auth.js";
+import { checkProfile, showAuthPopup } from "./components/auth.js";
 import { renderLobby } from "./components/lobby.js";
 
 type User = { username: string };
@@ -22,6 +22,12 @@ function onLogout() {
   renderLandingPage(onPlayClicked);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  renderLandingPage(onPlayClicked);
+document.addEventListener("DOMContentLoaded", async () => {
+  const user = await checkProfile();
+  if (user) {
+    currentUser = user;
+    renderLobby(currentUser.username, onLogout);
+  } else {
+    renderLandingPage(onPlayClicked);
+  }
 });

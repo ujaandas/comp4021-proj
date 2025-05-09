@@ -24,6 +24,21 @@ export async function register(
   return await res.json();
 }
 
+export async function checkProfile(): Promise<User | null> {
+  try {
+    const res = await fetch("/auth/profile", { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      return data.user || null;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error checking profile:", error);
+    return null;
+  }
+}
+
 export function showAuthPopup(onSuccess: (user: User) => void) {
   const overlay = document.createElement("div");
   overlay.id = "auth-overlay";

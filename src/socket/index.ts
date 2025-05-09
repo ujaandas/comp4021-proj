@@ -2,7 +2,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { ICustomSession } from "../routes/auth";
 import { IncomingMessage } from "http";
 
-interface SocketRequest extends IncomingMessage {
+export interface SocketRequest extends IncomingMessage {
   session?: ICustomSession;
 }
 
