@@ -7,6 +7,7 @@ import { GameTimer } from "./game/utils/GameTimer";
 import { TetrominoGenerator } from "./game/utils/TetGenerator";
 import { io } from "socket.io-client";
 import { Block } from "./game/components/Block";
+import {renderGameOverPage} from "./gameOverPage";
 
 export function renderGamePage(myUsername: string) {
   const appDiv = document.getElementById("app") as HTMLDivElement;
@@ -122,12 +123,22 @@ export function renderGamePage(myUsername: string) {
     }
   });
 
-  socket.on("endGame", (result: { winner: boolean }) => {
-    if (result.winner) {
-      socket.emit("winGame", {});
-      alert("You win!");
-    } else {
-      alert("You lost!");
+  socket.on("endGame", async (result: { winner: boolean }) => {
+    const playerScoreEl = document.getElementById("playerScore");
+    const opponentScoreEl = document.getElementById("opponentScore");
+
+    const playerScore = playerScoreEl ? parseInt(playerScoreEl.textContent || "0") : 0;
+    const opponentScore = opponentScoreEl ? parseInt(opponentScoreEl.textContent || "0") : 0;
+
+    try {
+      // Fetch leaderboard from your backend
+      const response = await fetch('/api/leaderboard');
+      const leaderboard = await response.json();
+      renderGameOverPage(result.winner, myUsername, playerScore, opponentScore, leaderboard);
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+      // Render without leaderboard if fetch fails
+      renderGameOverPage(result.winner, myUsername, playerScore, opponentScore);
     }
   });
 
