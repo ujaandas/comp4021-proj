@@ -4,14 +4,12 @@ const fs = require("fs");
 const path = require("path");
 const session = require("express-session");
 
-const _dirname = path.resolve(); // Gets the current directory
-console.log(_dirname)
+const _dirname = path.resolve();
+console.log(_dirname);
+
 // Initialize Express app
 const app = express();
-// Serve static files
 app.use(express.static(`${_dirname}/public`));
-
-// Security middleware
 app.use(express.json());
 
 const usersFilePath = `${_dirname}/data/users.json`;
@@ -32,11 +30,10 @@ function containWordCharsOnly(text) {
   return /^\w+$/.test(text);
 }
 
+// Auth Routes
 app.post("/auth/register", async (req, res) => {
   try {
     const { username, avatar, name, password } = req.body;
-
-    // Read and parse users file
     const users = JSON.parse(fs.readFileSync(usersFilePath, "utf8"));
 
     if (!username || !avatar || !name || !password) {
@@ -52,22 +49,18 @@ app.post("/auth/register", async (req, res) => {
 
     if (users[username]) {
       return res
-        .status(409)
-        .json({ status: "error", error: "Username already exists" });
+          .status(409)
+          .json({ status: "error", error: "Username already exists" });
     }
 
-    // Hash the password
     const hash = await bcrypt.hashSync(password, 10);
-
     users[username] = {
       avatar: avatar,
       name: name,
-      password: hash, // Store the hashed password, not the plain text
+      password: hash,
     };
 
-    // Write updated users back to file
     fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
-
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -101,7 +94,6 @@ app.post("/auth/login", async (req, res) => {
     };
 
     req.session.user = user;
-
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
@@ -116,22 +108,18 @@ app.post("/auth/logout", (req, res) => {
   });
 });
 
-// Serve the lobby page
+// Page Routes
 app.get("/lobby", (req, res) => {
-  if (!req.session.user) {
-    return res.redirect("/");
-  }
+  if (!req.session.user) return res.redirect("/");
   res.sendFile(path.join(_dirname, "/public/lobby.html"));
 });
 
-// Serve the game page
 app.get("/game", (req, res) => {
-  if (!req.session.user) {
-    return res.redirect("/");
-  }
+  if (!req.session.user) return res.redirect("/");
   res.sendFile(path.join(_dirname, "/public/game.html"));
 });
 
+// Socket.io Setup
 const httpServer = require('http').createServer(app);
 const io = require('socket.io')(httpServer, {
   pingInterval: 30000,
@@ -141,86 +129,35 @@ const io = require('socket.io')(httpServer, {
   }
 });
 
-// Track online players and their status
+// Track online players and active games
 const onlinePlayers = new Map();
+const activeGames = new Map();
 
 io.use((socket, next) => {
   sessionConfig(socket.request, {}, next);
 });
 
-const activeGames = new Map();
-
 io.on("connection", (socket) => {
   const user = socket.request.session.user;
-  console.log("user" + user);
-  if (!user) {
-    return socket.disconnect(true);
-  }
+  if (!user) return socket.disconnect(true);
 
   socket.username = user.username;
-
   const prevSessionId = socket.handshake.auth.sessionId;
-  if (prevSessionId) {
-    // Reattach to previous session
-    socket.join(prevSessionId);
-  }
+  if (prevSessionId) socket.join(prevSessionId);
 
-  socket.on('game-ready-to-start', ({ opponent }) => {
-    // Find game where these two players are matched
-    const game = Array.from(activeGames.values()).find(g =>
-        g.players.includes(socket.username) &&
-        g.players.includes(opponent)
-    );
-
-    if (!game) {
-      return socket.emit('game-error', 'Game not found');
-    }
-
-    // Mark player as ready
-    game.readyPlayers.add(socket.username);
-
-    // If both ready, redirect
-    if (game.readyPlayers.size === 2) {
-      // Store game ID in session
-      game.sockets.forEach(sockId => {
-        io.to(sockId).emit('redirect-to-game', {
-          gameId: game.gameId
-        });
-      });
-
-      activeGames.delete(game.gameId);
-    }
-  });
-
-  socket.on('player-ready', ({ gameId }) => {
-    const game = activeGames.get(gameId);
-    if (game) {
-      game.readyPlayers.add(socket.username);
-
-      // If both players are ready
-      if (game.readyPlayers.size === 2) {
-        io.to(gameId).emit('redirect-to-game', { gameId });
-        activeGames.delete(gameId);
-      }
-    }
-  });
-
-  // When a player enters the lobby
+  // When player enters lobby
   socket.on("enter-lobby", () => {
-    // Join a room with the username
     socket.join(user.username);
-
     onlinePlayers.set(user.username, {
       socketId: socket.id,
       inGame: false,
       avatar: user.avatar,
       name: user.name,
     });
-
     broadcastOnlinePlayers();
   });
 
-  // When a player leaves the lobby
+  // When player leaves lobby
   socket.on("leave-lobby", () => {
     if (onlinePlayers.has(user.username)) {
       onlinePlayers.delete(user.username);
@@ -228,7 +165,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // When a player sends a game request
+  // Game request handling
   socket.on("game-request", ({ to }) => {
     const recipient = onlinePlayers.get(to);
     if (recipient && !recipient.inGame) {
@@ -236,124 +173,102 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Modify the game-accept handler to track the game
-
+  // Game accept handling (NO REDIRECTION HERE)
   socket.on("game-accept", ({ to }) => {
     const initiator = onlinePlayers.get(to);
     const acceptor = onlinePlayers.get(user.username);
 
     if (initiator && acceptor) {
-      // Create consistent game ID
       const gameId = `game-${[to, user.username].sort().join('-')}-${Date.now()}`;
 
-      // Mark both players as in game
+      console.log("gameid" + initiator.socketId + acceptor.socketId + user.username + to)
       onlinePlayers.get(to).inGame = true;
       onlinePlayers.get(user.username).inGame = true;
 
-      // Create game entry
       activeGames.set(gameId, {
         players: [to, user.username],
-        gameId: gameId
+        sockets: [initiator.socketId, acceptor.socketId],
       });
 
-      // Store game ID with players
-      onlinePlayers.get(to).gameId = gameId;
-      onlinePlayers.get(user.username).gameId = gameId;
+      console.log("game" + activeGames[0])
 
-      // Notify both players and redirect immediately
-      io.to(initiator.socketId).emit("redirect-to-game", { gameId });
-      io.to(acceptor.socketId).emit("redirect-to-game", { gameId });
+      // Notify both players but DON'T redirect yet
+      io.to(initiator.socketId).emit("game-start", {
+        opponent: user.username,
+        isInitiator: true,
+        gameId
+      });
+
+      io.to(acceptor.socketId).emit("game-start", {
+        opponent: to,
+        isInitiator: false,
+        gameId
+      });
 
       broadcastOnlinePlayers();
     }
   });
-  // When a player declines a game request
+
+// Replace the old start-game handler with:
+  socket.on("initiator-ready", ({ gameId }) => {
+    const game = activeGames.get(gameId);
+    if (!game) return;
+
+    const initiatorSocket = io.sockets.sockets.get(game.sockets[0]);
+    const acceptorSocket = io.sockets.sockets.get(game.sockets[1]);
+
+    initiatorSocket.emit('redirect-to-game', { gameId });
+    acceptorSocket.emit('redirect-to-game', { gameId });
+
+    activeGames.delete(gameId);
+
+  });
+
+  // Game decline handling
   socket.on("game-decline", ({ to }) => {
     const initiator = onlinePlayers.get(to);
     if (initiator) {
       io.to(initiator.socketId).emit("game-declined", user.username);
-
-      // Ensure both players remain not in game
       onlinePlayers.get(user.username).inGame = false;
-      if (onlinePlayers.has(to)) {
-        onlinePlayers.get(to).inGame = false;
-      }
-
-      // Broadcast the updated player list
+      if (onlinePlayers.has(to)) onlinePlayers.get(to).inGame = false;
       broadcastOnlinePlayers();
     }
   });
 
-  // When players leave the game
-  socket.on("leave-game", () => {
-    if (onlinePlayers.has(user.username)) {
-      onlinePlayers.get(user.username).inGame = false;
-      broadcastOnlinePlayers();
-    }
-  });
-
-  // Handle disconnection
+  // Disconnection handling
   socket.on("disconnect", (reason) => {
     if (onlinePlayers.has(user.username)) {
-      console.log(`User ${user.username} disconnected: ${reason}`);
       const playerData = onlinePlayers.get(user.username);
-      onlinePlayers.delete(user.username);
 
-      // Notify other players if this player was in a game
-      if (playerData.inGame) {
-        io.emit("player-disconnected", user.username);
+      if (playerData.gameId) {
+        const game = activeGames.get(playerData.gameId);
+        if (game) {
+          const otherPlayer = game.players.find(p => p !== user.username);
+          if (otherPlayer) {
+            io.to(onlinePlayers.get(otherPlayer).emit("player-disconnected", user.username));
+          }
+          activeGames.delete(playerData.gameId);
+        }
       }
 
+      onlinePlayers.delete(user.username);
       broadcastOnlinePlayers();
     }
   });
 
-  socket.on("error", (error) => {
-    console.log(`Socket error for ${user.username}:`, error);
-  });
-
+  // Helper function to broadcast player list
   function broadcastOnlinePlayers() {
     const playersList = Array.from(onlinePlayers.entries()).map(
-      ([username, data]) => ({
-        username,
-        avatar: data.avatar,
-        name: data.name,
-        inGame: data.inGame,
-      })
+        ([username, data]) => ({
+          username,
+          avatar: data.avatar,
+          name: data.name,
+          inGame: data.inGame,
+        })
     );
     io.emit("online-players", playersList);
   }
-
-  app.get("/api/game-status", (req, res) => {
-    if (!req.session.user) {
-      return res.redirect("/");
-    }
-
-    const player = onlinePlayers.get(req.session.user.username);
-    res.json({
-      inGame: player?.inGame || false,
-      opponent: player?.gameId
-        ? activeGames
-            .get(player.gameId)
-            .players.find((p) => p !== req.session.user.username)
-        : null,
-    });
-  });
-  socket.on("disconnect", (reason) => {
-    console.log(`[SERVER] Disconnected ${socket.id}: ${reason}`);
-  });
 });
-
-function findSocketByUsername(username) {
-  const sockets = io.of("/").sockets; // Gets all connected sockets
-
-  for (const [id, socket] of sockets) {
-    if (socket.username === username) {
-      return socket;
-    }
-  }
-  return null; // Explicit return if not found
-}
 
 const PORT = process.env.PORT || 8000;
 httpServer.listen(PORT, () => {

@@ -56,7 +56,30 @@ const Lobby = (function() {
             showPendingRequest(fromUser);
         });
 
+        // Game request was accepted - show game UI but don't redirect yet
+        socket.on('game-start', ({ opponent, isInitiator, gameId }) => {
+            currentGame = {
+                opponent,
+                isInitiator,
+                gameId
+            };
 
+            console.log("yo" + currentGame.gameId)
+            console.log("yo1" + currentGame.isInitiator)
+            console.log("yo2" + currentGame.gameId)
+
+            $('.online-players-section, #pending-requests-section').hide();
+            $('#active-game-section').show();
+            $('#opponent-name').text(opponent);
+
+            if (isInitiator) {
+                $('#start-game-btn').show().on('click', startGameHandler);
+            } else {
+                $('#start-game-btn').hide();
+            }
+        });
+
+        // Game request was declined
         socket.on('game-declined', (fromUser) => {
             const $playerItem = $(`.player-item[data-username="${fromUser}"]`);
             if ($playerItem.length) {
@@ -83,21 +106,13 @@ const Lobby = (function() {
             console.error('Connection error:', err.message);
         });
 
-        // Add these new listeners in setupSocketListeners:
-        socket.on('prepare-for-game', ({ gameId }) => {
-            // Store game ID for later
-            currentGame.gameId = gameId;
-
-            // Immediately emit ready status
-            socket.emit('player-ready', { gameId });
-        });
-
+        // Redirect to game when both players are ready
         socket.on('redirect-to-game', ({ gameId }) => {
-            // Store game ID in session storage
             sessionStorage.setItem('currentGameId', gameId);
             window.location.href = '/game.html';
         });
 
+        // Handle game errors
         socket.on('game-error', (message) => {
             alert(message);
             returnToLobby();
@@ -112,16 +127,6 @@ const Lobby = (function() {
             localStorage.removeItem('username');
             localStorage.removeItem(SESSION_ID_KEY);
             window.location.href = '/';
-        });
-
-        // Add this new handler
-        $('#start-game-btn').on('click', () => {
-            if (currentGame) {
-                // Emit an event to the server that we're starting the game
-                socket.emit('game-ready-to-start', {
-                    opponent: currentGame.opponent
-                });
-            }
         });
     };
 
@@ -227,31 +232,12 @@ const Lobby = (function() {
         $('#pending-requests-list').append($requestItem);
     };
 
-    const startGameWithOpponent = function(opponent, isInitiator) {
-        currentGame = {
-            opponent,
-            isInitiator
-        };
-
-        $('.online-players-section, #pending-requests-section').hide();
-        $('#active-game-section').show();
-        $('#opponent-name').text(opponent);
-
-        if (isInitiator) {
-            $('#start-game-btn').show().off('click').on('click', startGameHandler);
-        } else {
-            $('#start-game-btn').hide();
-        }
-    };
-
     const startGameHandler = function() {
         if (!currentGame) return;
-
-        $('#start-game-btn').text('Starting...').prop('disabled', true);
-
-        // Send the opponent's username, not the game ID
-        socket.emit('game-ready-to-start', {
-            opponent: currentGame.opponent
+        console.log("currentgame" + currentGame)
+        // Notify server we're ready to start
+        socket.emit('initiator-ready', {
+            gameId: currentGame.gameId
         });
     };
 
