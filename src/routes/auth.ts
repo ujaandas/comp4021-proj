@@ -54,9 +54,20 @@ router.post("/login", async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Invalid username or password." });
   }
 
-  (req.session as any).user = { username };
+  const reqSession = req.session as ICustomSession;
+  reqSession.user = user;
 
   res.json({ success: true, user: { username } });
+});
+
+router.get("/profile", (req: Request, res: Response) => {
+  const session = req.session as ICustomSession;
+
+  if (session.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  res.json({ user: session.user });
 });
 
 router.post("/logout", (req: Request, res: Response) => {
