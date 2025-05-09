@@ -71,5 +71,12 @@ export class InputHandler {
     this.bindKey("r", () => {
       this.tileset.spinActiveTet(Math.PI / 2);
     });
+
+    this.bindKey("c", () => {
+      const tetPreviewEl = document.getElementById("tetrominoPreview");
+      if (tetPreviewEl) {
+        tetPreviewEl.style.display = "block";
+      }
+    });
   }
 }

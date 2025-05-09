@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "68db464d-5d64-419a-91d9-ee4a4a152d8c",
+    "player1": "user1",
+    "player2": "user2"
+  },
+  {
+    "id": "7551db01-5356-49bd-9246-a0eb52d15c6c",
+    "player1": "user1",
+    "player2": "user2"
+  }
+]

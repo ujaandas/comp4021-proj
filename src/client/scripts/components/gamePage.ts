@@ -68,6 +68,7 @@ export function renderGamePage(myUsername: string) {
   function updateTetPreviewUI() {
     const tetPreviewEl = document.getElementById("tetrominoPreview");
     if (tetPreviewEl) {
+      tetPreviewEl.style.display = "none";
       tetPreviewEl.innerHTML = tetQueue
         .map((tet) => `<div>${tet.style}</div>`)
         .join("");
