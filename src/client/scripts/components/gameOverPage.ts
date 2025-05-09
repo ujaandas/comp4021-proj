@@ -248,13 +248,13 @@ export function renderGameOverPage(
     </div>
   `;
 
-  const backgroundMusic = new Audio(music);
-  backgroundMusic.loop = true;
-  backgroundMusic.volume = 0.3;
+  // const backgroundMusic = new Audio(music);
+  // backgroundMusic.loop = true;
+  // backgroundMusic.volume = 0.3;
 
-  backgroundMusic
-    .play()
-    .catch((err) => console.error("Error playing background music:", err));
+  // backgroundMusic
+  //   .play()
+  //   .catch((err) => console.error("Error playing background music:", err));
 
   const playAgainBtn = document.getElementById("playAgainBtn");
   const mainMenuBtn = document.getElementById("mainMenuBtn");
