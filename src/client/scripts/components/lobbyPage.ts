@@ -9,29 +9,39 @@ export interface ILobby {
   player2: string | null;
 }
 
-export function renderLobby(userName: string, onLogout: () => void) {
+export function renderLobby(username: string, onLogout: () => void) {
   const html = `
     <div class="lobby">
-      <h2>Welcome, ${userName}</h2>
+      <h2>Welcome, ${username}</h2>
       <button id="create-lobby">Create Lobby</button>
       <div id="available-lobbies"></div>
       <button id="logout-button">Logout</button>
     </div>
   `;
+
   const appDiv = document.getElementById("app") as HTMLDivElement;
   appDiv.innerHTML = html;
+
   socket = io();
-  socket.on("lobbyList", (lobbies: Array<ILobby>) => {
-    renderLobbyList(lobbies, userName, onLogout);
+
+  socket.on("startGame", (lobby: ILobby) => {
+    console.log("Game started in lobby:", lobby);
+    renderGamePage(username);
   });
+
+  socket.on("lobbyList", (lobbies: Array<ILobby>) => {
+    renderLobbyList(lobbies, username, onLogout);
+  });
+
   const createBtn = document.getElementById(
     "create-lobby"
   ) as HTMLButtonElement;
   createBtn.addEventListener("click", () => {
     socket.emit("createLobby", (lobby: ILobby) => {
-      showLobbyView(lobby, userName, onLogout);
+      showLobbyView(lobby, username, onLogout);
     });
   });
+
   const logoutBtn = document.getElementById(
     "logout-button"
   ) as HTMLButtonElement;
@@ -49,8 +59,9 @@ export function renderLobby(userName: string, onLogout: () => void) {
       alert("Error during logout.");
     }
   });
+
   socket.on("lobbyJoined", (lobby: ILobby) => {
-    showLobbyView(lobby, userName, onLogout);
+    showLobbyView(lobby, username, onLogout);
   });
 }
 
@@ -62,36 +73,42 @@ function renderLobbyList(
   const container = document.getElementById("available-lobbies");
   if (!container) return;
   container.innerHTML = "";
+
   lobbies.forEach((lobby) => {
     const lobbyDiv = document.createElement("div");
     lobbyDiv.textContent = `Lobby ${lobby.id} | Host: ${lobby.player1}`;
     const joinBtn = document.createElement("button");
     joinBtn.textContent = "Join Lobby";
+
     joinBtn.addEventListener("click", () => {
       joinLobby(lobby.id, userName, onLogout);
     });
+
     lobbyDiv.appendChild(joinBtn);
     container.appendChild(lobbyDiv);
   });
 }
 
-function joinLobby(lobbyId: string, userName: string, onLogout: () => void) {
+function joinLobby(lobbyId: string, username: string, onLogout: () => void) {
   socket.emit("joinLobby", lobbyId, (lobby: ILobby | null) => {
     if (lobby) {
-      showLobbyView(lobby, userName, onLogout);
+      showLobbyView(lobby, username, onLogout);
     } else {
       alert("Unable to join lobby or lobby is full.");
     }
   });
 }
 
-function showLobbyView(lobby: ILobby, userName: string, onLogout: () => void) {
+function showLobbyView(lobby: ILobby, username: string, onLogout: () => void) {
   const appDiv = document.getElementById("app") as HTMLDivElement;
   let buttonsHtml = "";
-  if (lobby.player2 !== null && lobby.player1 === userName) {
+
+  if (lobby.player2 !== null && lobby.player1 === username) {
     buttonsHtml += `<button id="start-game">Start Game!</button>`;
   }
+
   buttonsHtml += `<button id="leave-lobby">Leave Lobby</button>`;
+
   appDiv.innerHTML = `
     <div class="lobby-view">
       <h2>Lobby ${lobby.id}</h2>
@@ -102,15 +119,18 @@ function showLobbyView(lobby: ILobby, userName: string, onLogout: () => void) {
       ${buttonsHtml}
     </div>
   `;
+
   const startGameBtn = document.getElementById(
     "start-game"
   ) as HTMLButtonElement;
+
   if (startGameBtn) {
     startGameBtn.addEventListener("click", () => {
       socket.emit("startGame", lobby.id);
-      renderGamePage();
+      renderGamePage(username);
     });
   }
+
   const leaveLobbyBtn = document.getElementById(
     "leave-lobby"
   ) as HTMLButtonElement;
@@ -118,7 +138,7 @@ function showLobbyView(lobby: ILobby, userName: string, onLogout: () => void) {
     socket.emit("leaveLobby", lobby.id, (success: boolean) => {
       if (success) {
         socket.emit("getLobbyList");
-        renderLobby(userName, onLogout);
+        renderLobby(username, onLogout);
       } else {
         alert("Could not leave lobby.");
       }

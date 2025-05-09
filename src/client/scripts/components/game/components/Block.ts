@@ -14,6 +14,28 @@ export class Block {
     });
   }
 
+  toJSON() {
+    return {
+      fallCount: this.fallCount,
+      colour: this._colour.toString(),
+      height: this.height,
+      walls: this._walls.map((wall) => wall.toJSON()),
+    };
+  }
+
+  static fromJSON(data: any): Block {
+    const newBlock = new Block(
+      data.walls.map((wall: any) => Wall.fromJSON(wall))
+    );
+    newBlock.height = data.height;
+    newBlock.fallCount = data.fallCount;
+    newBlock._colour = Colour.fromString(data.colour);
+    newBlock._walls.forEach((wall) => {
+      wall.colour = newBlock._colour;
+    });
+    return newBlock;
+  }
+
   set colour(value: Colour) {
     this._walls.forEach((wall) => {
       wall.colour = value;

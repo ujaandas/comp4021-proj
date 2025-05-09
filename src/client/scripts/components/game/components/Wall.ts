@@ -6,6 +6,24 @@ export class Wall {
   public height: number;
   public colour: Colour;
 
+  toJSON() {
+    return {
+      start: this.start.toJSON(),
+      end: this.end.toJSON(),
+      height: this.height,
+      colour: this.colour.toString(),
+    };
+  }
+
+  static fromJSON(data: any): Wall {
+    return new Wall(
+      Coordinate.fromJSON(data.start),
+      Coordinate.fromJSON(data.end),
+      data.height,
+      Colour.fromString(data.colour)
+    );
+  }
+
   constructor(
     public start: Coordinate,
     public end: Coordinate,

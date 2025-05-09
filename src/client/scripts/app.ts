@@ -1,6 +1,6 @@
 import { renderLandingPage } from "./components/landingPage.js";
-import { checkProfile, showAuthPopup } from "./components/auth.js";
-import { renderLobby } from "./components/lobby.js";
+import { checkProfile, showAuthPopup } from "./components/authPage.js";
+import { renderLobby } from "./components/lobbyPage.js";
 
 type User = { username: string };
 

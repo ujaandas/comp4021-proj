@@ -126,7 +126,9 @@ export class Renderer {
       }
     };
 
-    blocks.forEach((block) => addBlock(block));
+    blocks.forEach((block) => {
+      addBlock(block);
+    });
     if (activeTet) {
       activeTet.blocks.forEach((block) => addBlock(block));
     }

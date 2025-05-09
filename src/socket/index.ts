@@ -13,6 +13,14 @@ export default function socketHandler(io: SocketIOServer) {
 
     socket.on("disconnect", () => {
       console.log("Socket disconnected:", socket.id);
+      const req = socket.request as SocketRequest;
+      if (req?.session?.user) {
+        console.log("User disconnected:", req.session.user.username);
+      }
+      // remove all listeners
+      socket.removeAllListeners();
+
+      // delete all lobbies
     });
   });
 }

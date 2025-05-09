@@ -6,8 +6,9 @@ import { Settings } from "./game/utils/Settings";
 import { GameTimer } from "./game/utils/GameTimer";
 import { TetrominoGenerator } from "./game/utils/TetGenerator";
 import { io } from "socket.io-client";
+import { Block } from "./game/components/Block";
 
-export function renderGamePage() {
+export function renderGamePage(myUsername: string) {
   const appDiv = document.getElementById("app") as HTMLDivElement;
   if (!appDiv) {
     console.error("No element with id 'app' found.");
@@ -49,12 +50,17 @@ export function renderGamePage() {
 
   const socket = io();
 
-  const updateTilesetCallback = () => {
-    socket.emit("updateTileset", localTileset.adj);
+  const updateTilesetCallback = (block: Block) => {
+    console.log(`Sent block at (${block.pos}) with height ${block.height}`);
+    socket.emit("updateBlocks", {
+      block: block.toJSON(),
+      username: myUsername,
+    });
   };
 
   const updateScoreCallback = (score: number) => {
-    socket.emit("updateScore", score);
+    socket.emit("updateScore", { score, username: myUsername });
+    console.log(`Emitting score: ${score} from ${myUsername}`);
     const playerScoreEl = document.getElementById("playerScore");
     if (playerScoreEl) {
       playerScoreEl.textContent = score.toString();
@@ -78,19 +84,7 @@ export function renderGamePage() {
     gameoverCallback
   );
 
-  const opponentTileset = new Tileset(
-    Settings.mapHeight,
-    Settings.mapWidth,
-    () => {},
-    (score: number) => {
-      const opponentScoreEl = document.getElementById("opponentScore");
-      if (opponentScoreEl) {
-        opponentScoreEl.textContent = score.toString();
-      }
-    },
-    () => {},
-    () => {}
-  );
+  let opponentBlocks: Block[] = [];
 
   const camera = new Camera();
   const localRenderer = new Renderer(localCanvas, localCtx);
@@ -107,23 +101,25 @@ export function renderGamePage() {
   inputHandler.bindDefaultCameraControls();
   inputHandler.bindDefaultMovementControls();
 
-  socket.on("startGame", () => {
-    console.log("Game started by server.");
+  socket.on("startGame", (username: string) => {
+    console.log(`Game started by server and from ${username}`);
   });
 
-  socket.on("updateTileset", (data: any) => {
-    opponentTileset.adj = data;
+  socket.on("updateBlocks", (data: { block: string; username: string }) => {
+    console.log(`Received placed blocks from ${data.username}`);
+    const newBlock = Block.fromJSON(data.block);
+    console.log(
+      `Received block at (${newBlock.pos}) with height ${newBlock.height}`
+    );
+    opponentBlocks.push(newBlock);
   });
 
-  socket.on("scoreUpdate", (score: number) => {
+  socket.on("scoreUpdate", (data: { score: number; username: string }) => {
+    console.log(`Received score update: ${data.score} from ${data.username}`);
     const opponentScoreEl = document.getElementById("opponentScore");
     if (opponentScoreEl) {
-      opponentScoreEl.textContent = score.toString();
+      opponentScoreEl.textContent = data.score.toString();
     }
-  });
-
-  socket.on("sendLayers", (clearable: number) => {
-    // localTileset.addPenaltyLines(clearable);
   });
 
   socket.on("endGame", (result: { winner: boolean }) => {
@@ -156,12 +152,12 @@ export function renderGamePage() {
       camera.angle
     );
 
-    opponentRenderer.renderTiles(opponentTileset.adj, camera.angle);
+    opponentRenderer.renderTiles(localTileset.adj, Settings.initialAngle);
     opponentRenderer.renderWalls2(
-      opponentTileset.placedBlocks,
-      opponentTileset.activeTet,
-      opponentTileset.activeTetGhost,
-      camera.angle
+      opponentBlocks,
+      null,
+      null,
+      Settings.initialAngle
     );
 
     gameTimer.update();

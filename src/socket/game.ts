@@ -9,65 +9,41 @@ export default function gameHandler(io: SocketIOServer) {
     }
     const username = req.session.user.username;
 
-    socket.on(
-      "joinGame",
-      (roomId: string, callback: (success: boolean) => void) => {
-        socket.join(roomId);
-        io.to(roomId).emit("playerJoined", { username });
-        callback(true);
-      }
-    );
-
     socket.on("startGame", (roomId: string) => {
-      io.to(roomId).emit("startGame");
+      console.log(`Game started in room: ${roomId}`);
+      io.to(roomId).emit("startGame", username);
     });
 
-    socket.on("updateTileset", (data: any) => {
-      socket.rooms.forEach((room) => {
-        if (room !== socket.id) {
-          io.to(room).emit("updateTileset", data);
-        }
-      });
+    socket.on("updateBlocks", (data: { block: string; username: string }) => {
+      console.log(`Emitting block from ${data.username}`);
+      socket.broadcast.emit("updateBlocks", data);
     });
 
-    socket.on("updateScore", (score: number) => {
-      socket.rooms.forEach((room) => {
-        if (room !== socket.id) {
-          io.to(room).emit("scoreUpdate", score);
-        }
-      });
+    socket.on("updateScore", (data: { score: number; username: string }) => {
+      console.log(`Emitting score: ${data.score} from ${data.username}`);
+      socket.broadcast.emit("scoreUpdate", data);
     });
 
-    socket.on("sendLayers", (clearable: number) => {
-      socket.rooms.forEach((room) => {
-        if (room !== socket.id) {
-          io.to(room).emit("sendLayers", clearable);
-        }
-      });
+    socket.on("sendLayers", (data: { clearable: number; username: string }) => {
+      console.log(`Emitting layers: ${data.clearable} from ${data.username}`);
+      socket.broadcast.emit(
+        `layersUpdate ${data.clearable} from ${data.username}`
+      );
     });
 
     socket.on("gameOver", () => {
-      socket.rooms.forEach((room) => {
-        if (room !== socket.id) {
-          io.to(room).emit("endGame", { winner: false });
-        }
-      });
+      console.log(`Game over emitted`);
+      socket.broadcast.emit("gameOver", { username });
     });
 
     socket.on("winGame", () => {
-      socket.rooms.forEach((room) => {
-        if (room !== socket.id) {
-          io.to(room).emit("endGame", { winner: true });
-        }
-      });
+      console.log(`Win game emitted`);
+      socket.broadcast.emit("winGame", { username });
     });
 
     socket.on("disconnect", () => {
-      socket.rooms.forEach((room) => {
-        if (room !== socket.id) {
-          io.to(room).emit("playerLeft", { username });
-        }
-      });
+      console.log(`User disconnected: ${username}`);
+      socket.broadcast.emit("userDisconnected", { username });
     });
   });
 }

@@ -17,7 +17,7 @@ export class Tileset {
   public activeBlockGhost: GhostBlock | null = null;
   public activeTetGhost: GhostTetromino | null = null;
 
-  private updateTilesetCallback: () => void;
+  private updateTilesetCallback: (block: Block) => void;
   private updateScoreCallback: (score: number) => void;
   private sendLayersCallback: (clearable: number) => void;
   private gameoverCallback: () => void;
@@ -25,7 +25,7 @@ export class Tileset {
   constructor(
     private gameW: number,
     private gameH: number,
-    updateTilesetCallback: () => void,
+    updateTilesetCallback: (block: Block) => void,
     updateScoreCallback: (score: number) => void,
     sendLayersCallback: (clearable: number) => void,
     gameoverCallback: () => void
@@ -35,6 +35,57 @@ export class Tileset {
     this.updateScoreCallback = updateScoreCallback;
     this.sendLayersCallback = sendLayersCallback;
     this.gameoverCallback = gameoverCallback;
+  }
+
+  public static serialize(tileset: Tileset): string {
+    const data = {
+      gameW: tileset.gameW,
+      gameH: tileset.gameH,
+      adj: Array.from(tileset.adj.entries()),
+      score: tileset.score,
+      coordinateCache: Array.from(tileset.coordinateCache.entries()),
+      blocks: tileset.blocks,
+      tets: tileset.tets,
+      placedBlocks: tileset._placedBlocks,
+      activeBlockIndex: tileset.activeBlockIndex,
+      activeTetIndex: tileset.activeTetIndex,
+      activeBlockGhost: tileset.activeBlockGhost,
+      activeTetGhost: tileset.activeTetGhost,
+    };
+
+    return JSON.stringify(data);
+  }
+
+  public static deserialize(
+    serialized: string,
+    updateTilesetCallback: () => void,
+    updateScoreCallback: (score: number) => void,
+    sendLayersCallback: (clearable: number) => void,
+    gameoverCallback: () => void
+  ): Tileset {
+    const data = JSON.parse(serialized);
+
+    const tileset = new Tileset(
+      data.gameW,
+      data.gameH,
+      updateTilesetCallback,
+      updateScoreCallback,
+      sendLayersCallback,
+      gameoverCallback
+    );
+
+    tileset.adj = new Map(data.adj);
+    tileset.score = data.score;
+    tileset.coordinateCache = new Map(data.coordinateCache);
+    tileset.blocks = data.blocks;
+    tileset.tets = data.tets;
+    tileset._placedBlocks = data.placedBlocks;
+    tileset.activeBlockIndex = data.activeBlockIndex;
+    tileset.activeTetIndex = data.activeTetIndex;
+    tileset.activeBlockGhost = data.activeBlockGhost;
+    tileset.activeTetGhost = data.activeTetGhost;
+
+    return tileset;
   }
 
   private initializeGraph(): void {
@@ -379,12 +430,10 @@ export class Tileset {
 
     if (!this.isValidTetDrop(n)) {
       this.freezeActiveTet();
-      this.updateTilesetCallback();
       return false;
     }
 
     this.activeTet.drop(n);
-    this.updateTilesetCallback();
     return true;
   }
 
@@ -437,6 +486,10 @@ export class Tileset {
     this.tets.push(tet);
   }
 
+  addTets(tets: Tetromino[]): void {
+    this.tets.push(...tets);
+  }
+
   freezeActiveBlock(): void {
     this.setNextActiveBlock();
     this.setNextGhostBlock();
@@ -462,6 +515,8 @@ export class Tileset {
     if (node) {
       node.setOccupiedAtHeight(height);
       this._placedBlocks.push(block);
+      this.updateTilesetCallback(block);
+      console.log(`Placed block at (${block.pos}) with height ${block.height}`);
     }
   }
 

@@ -1,6 +1,14 @@
 export class Coordinate {
   constructor(public i: number, public j: number) {}
 
+  toJSON() {
+    return { i: this.i, j: this.j };
+  }
+
+  static fromJSON(data: any): Coordinate {
+    return new Coordinate(data.i, data.j);
+  }
+
   static makeKey(i: number, j: number): string {
     return `${i},${j}`;
   }
