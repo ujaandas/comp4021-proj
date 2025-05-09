@@ -7,6 +7,7 @@ import { GameTimer } from "./game/utils/GameTimer";
 import { TetrominoGenerator } from "./game/utils/TetGenerator";
 import { io } from "socket.io-client";
 import { Block } from "./game/components/Block";
+import { Tetromino } from "./game/components/Tetromino";
 
 export function renderGamePage(myUsername: string) {
   const appDiv = document.getElementById("app") as HTMLDivElement;
@@ -23,6 +24,7 @@ export function renderGamePage(myUsername: string) {
       <canvas id="localCanvas"></canvas>
       <canvas id="opponentCanvas"></canvas>
     </div>
+    <div id="tetrominoPreview"></div>
   `;
 
   const localCanvas = document.getElementById(
@@ -50,8 +52,29 @@ export function renderGamePage(myUsername: string) {
 
   const socket = io();
 
+  const tetQueue: Tetromino[] = [
+    TetrominoGenerator.getRandomTetromino(),
+    TetrominoGenerator.getRandomTetromino(),
+    TetrominoGenerator.getRandomTetromino(),
+  ];
+
+  function getNextTetromino(): Tetromino {
+    const nextTet = tetQueue.shift()!;
+    tetQueue.push(TetrominoGenerator.getRandomTetromino());
+    updateTetPreviewUI();
+    return nextTet;
+  }
+
+  function updateTetPreviewUI() {
+    const tetPreviewEl = document.getElementById("tetrominoPreview");
+    if (tetPreviewEl) {
+      tetPreviewEl.innerHTML = tetQueue
+        .map((tet) => `<div>${tet.style}</div>`)
+        .join("");
+    }
+  }
+
   const updateTilesetCallback = (block: Block) => {
-    console.log(`Sent block at (${block.pos}) with height ${block.height}`);
     socket.emit("updateBlocks", {
       block: block.toJSON(),
       username: myUsername,
@@ -60,7 +83,6 @@ export function renderGamePage(myUsername: string) {
 
   const updateScoreCallback = (score: number) => {
     socket.emit("updateScore", { score, username: myUsername });
-    console.log(`Emitting score: ${score} from ${myUsername}`);
     const playerScoreEl = document.getElementById("playerScore");
     if (playerScoreEl) {
       playerScoreEl.textContent = score.toString();
@@ -93,7 +115,8 @@ export function renderGamePage(myUsername: string) {
 
   const gameTimer = new GameTimer(Settings.fallDelay, () => {
     if (!localTileset.playTetMode()) {
-      localTileset.addTet(TetrominoGenerator.getRandomTetromino());
+      const newTet = getNextTetromino();
+      localTileset.addTet(newTet);
       localTileset.initTetMode();
     }
   });
@@ -106,16 +129,11 @@ export function renderGamePage(myUsername: string) {
   });
 
   socket.on("updateBlocks", (data: { block: string; username: string }) => {
-    console.log(`Received placed blocks from ${data.username}`);
     const newBlock = Block.fromJSON(data.block);
-    console.log(
-      `Received block at (${newBlock.pos}) with height ${newBlock.height}`
-    );
     opponentBlocks.push(newBlock);
   });
 
   socket.on("scoreUpdate", (data: { score: number; username: string }) => {
-    console.log(`Received score update: ${data.score} from ${data.username}`);
     const opponentScoreEl = document.getElementById("opponentScore");
     if (opponentScoreEl) {
       opponentScoreEl.textContent = data.score.toString();
@@ -132,8 +150,9 @@ export function renderGamePage(myUsername: string) {
   });
 
   localTileset.initTetMode();
-  localTileset.addTet(TetrominoGenerator.getRandomTetromino());
+  localTileset.addTet(getNextTetromino());
   localTileset.initTetMode();
+  updateTetPreviewUI();
 
   let lastTime = performance.now();
   const render = () => {

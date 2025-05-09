@@ -6,7 +6,11 @@ export class Tetromino {
   public fallCount: number = 0;
   public heights: number[] = [];
 
-  constructor(public blocks: Block[], public colour: Colour) {
+  constructor(
+    public blocks: Block[],
+    public colour: Colour,
+    public style?: string
+  ) {
     this.heights = this.blocks.map((block) => block.height);
     this.blocks.map((block) => {
       block.colour = this.colour;

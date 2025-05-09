@@ -12,7 +12,7 @@ export class TetrominoGenerator {
       Block.makeBlockOnPoint(i + 1, j),
       Block.makeBlockOnPoint(i + 2, j),
     ];
-    return new Tetromino(blocks, Colour.random());
+    return new Tetromino(blocks, Colour.random(), "I");
   }
 
   static createJ(): Tetromino {
@@ -23,7 +23,7 @@ export class TetrominoGenerator {
       Block.makeBlockOnPoint(i, j),
       Block.makeBlockOnPoint(i + 1, j),
     ];
-    return new Tetromino(blocks, Colour.random());
+    return new Tetromino(blocks, Colour.random(), "J");
   }
 
   static createL(): Tetromino {
@@ -34,7 +34,7 @@ export class TetrominoGenerator {
       Block.makeBlockOnPoint(i, j),
       Block.makeBlockOnPoint(i + 1, j),
     ];
-    return new Tetromino(blocks, Colour.random());
+    return new Tetromino(blocks, Colour.random(), "L");
   }
 
   static createO(): Tetromino {
@@ -45,7 +45,7 @@ export class TetrominoGenerator {
       Block.makeBlockOnPoint(i, j),
       Block.makeBlockOnPoint(i + 1, j),
     ];
-    return new Tetromino(blocks, Colour.random());
+    return new Tetromino(blocks, Colour.random(), "O");
   }
 
   static createS(): Tetromino {
@@ -56,7 +56,7 @@ export class TetrominoGenerator {
       Block.makeBlockOnPoint(i - 1, j),
       Block.makeBlockOnPoint(i, j),
     ];
-    return new Tetromino(blocks, Colour.random());
+    return new Tetromino(blocks, Colour.random(), "S");
   }
 
   static createT(): Tetromino {
@@ -67,7 +67,7 @@ export class TetrominoGenerator {
       Block.makeBlockOnPoint(i, j),
       Block.makeBlockOnPoint(i + 1, j),
     ];
-    return new Tetromino(blocks, Colour.random());
+    return new Tetromino(blocks, Colour.random(), "T");
   }
 
   static createZ(): Tetromino {
@@ -78,7 +78,7 @@ export class TetrominoGenerator {
       Block.makeBlockOnPoint(i, j),
       Block.makeBlockOnPoint(i + 1, j),
     ];
-    return new Tetromino(blocks, Colour.random());
+    return new Tetromino(blocks, Colour.random(), "Z");
   }
 
   static getRandomTetromino(): Tetromino {
