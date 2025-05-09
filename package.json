@@ -5,7 +5,7 @@
   "scripts": {
     "dev:server": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "dev:client": "vite",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "npm run build & concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "build": "vite build && tsc"
   },
   "dependencies": {
