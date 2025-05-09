@@ -2,6 +2,12 @@ import { io, Socket } from "socket.io-client";
 
 let socket: Socket;
 
+interface ILobby {
+  id: string;
+  player1: string;
+  player2: string | null;
+}
+
 export function renderLobby(userName: string, onLogout: () => void) {
   const html = `
     <div class="lobby">
@@ -14,20 +20,12 @@ export function renderLobby(userName: string, onLogout: () => void) {
   const appDiv = document.getElementById("app") as HTMLDivElement;
   appDiv.innerHTML = html;
 
-  // Initialize the socket connection
   socket = io();
 
-  // Listen for available lobby list updates
-  socket.on(
-    "lobbyList",
-    (
-      lobbies: Array<{ id: string; player1: string; player2: string | null }>
-    ) => {
-      renderLobbyList(lobbies);
-    }
-  );
+  socket.on("lobbyList", (lobbies: Array<ILobby>) => {
+    renderLobbyList(lobbies);
+  });
 
-  // Create a new lobby. The server will respond with the lobby details.
   const createBtn = document.getElementById(
     "create-lobby"
   ) as HTMLButtonElement;
@@ -41,7 +39,6 @@ export function renderLobby(userName: string, onLogout: () => void) {
     );
   });
 
-  // Logout button disconnects the socket and then logs out
   const logoutBtn = document.getElementById(
     "logout-button"
   ) as HTMLButtonElement;
@@ -60,7 +57,6 @@ export function renderLobby(userName: string, onLogout: () => void) {
     }
   });
 
-  // Listen for when you join a lobby (for example, joining an existing lobby)
   socket.on(
     "lobbyJoined",
     (lobby: { id: string; player1: string; player2: string | null }) => {
@@ -91,17 +87,13 @@ function renderLobbyList(
 }
 
 function joinLobby(lobbyId: string) {
-  socket.emit(
-    "joinLobby",
-    lobbyId,
-    (lobby: { id: string; player1: string; player2: string | null } | null) => {
-      if (lobby) {
-        showLobbyView(lobby);
-      } else {
-        alert("Unable to join lobby or lobby is full.");
-      }
+  socket.emit("joinLobby", lobbyId, (lobby: ILobby | null) => {
+    if (lobby) {
+      showLobbyView(lobby);
+    } else {
+      alert("Unable to join lobby or lobby is full.");
     }
-  );
+  });
 }
 
 function showLobbyView(lobby: {
