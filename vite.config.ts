@@ -9,6 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/auth": "http://localhost:3000",
+      "/leaderboard": "http://localhost:3000",
     },
   },
   assetsInclude: ["**/*.mp3"],

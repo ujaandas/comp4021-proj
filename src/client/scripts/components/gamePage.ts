@@ -8,7 +8,7 @@ import { TetrominoGenerator } from "./game/utils/TetGenerator";
 import { io } from "socket.io-client";
 import { Block } from "./game/components/Block";
 import { Tetromino } from "./game/components/Tetromino";
-import music from "./game/assets/tetris.mp3";
+import music from "./assets/tetris.mp3";
 import { renderGameOverPage } from "./gameOverPage";
 import { Colour } from "./game/utils/Colour";
 
@@ -152,7 +152,7 @@ export function renderGamePage(myUsername: string) {
     width: 150px;
     height: 150px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
     text-align: center;
@@ -189,11 +189,17 @@ export function renderGamePage(myUsername: string) {
 
   const backgroundMusic = new Audio(music);
   backgroundMusic.loop = true;
-  backgroundMusic.volume = 0.2;
+  backgroundMusic.volume = 0.3;
 
   backgroundMusic
     .play()
     .catch((err) => console.error("Error playing background music:", err));
+
+  function stopMusic() {
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.volume = 0;
+  }
 
   const tetQueue: Tetromino[] = [
     TetrominoGenerator.getRandomTetromino(),
@@ -256,6 +262,7 @@ export function renderGamePage(myUsername: string) {
 
   const gameoverCallback = () => {
     running = false;
+    stopMusic();
     const myScore = document.getElementById("playerScore");
     const opponentScore = document.getElementById("opponentScore");
     const myScoreValue = myScore ? parseInt(myScore.textContent || "0") : 0;
@@ -321,19 +328,17 @@ export function renderGamePage(myUsername: string) {
       myScore: number;
       opponentScore: number;
     }) => {
+      stopMusic();
       console.log(`Game over emitted by ${data.username} with result:`, data);
 
       try {
-        const response = await fetch("/api/leaderboard");
-        const leaderboard = await response.json();
-
         renderGameOverPage(
           data.winner,
           data.username,
           data.myScore,
-          data.opponentScore,
-          leaderboard
+          data.opponentScore
         );
+        stopMusic();
       } catch (error) {
         console.error("Failed to fetch leaderboard:", error);
         renderGameOverPage(
@@ -342,6 +347,7 @@ export function renderGamePage(myUsername: string) {
           data.myScore,
           data.opponentScore
         );
+        stopMusic();
       }
     }
   );

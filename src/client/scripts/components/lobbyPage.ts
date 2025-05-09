@@ -1,5 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { renderGamePage } from "./gamePage";
+import music from "./assets/elevator.mp3";
 
 let socket: Socket;
 
@@ -242,6 +243,20 @@ export function renderLobby(username: string, onLogout: () => void) {
   const appDiv = document.getElementById("app") as HTMLDivElement;
   appDiv.innerHTML = html + lobbyStyles;
 
+  const backgroundMusic = new Audio(music);
+  backgroundMusic.loop = true;
+  backgroundMusic.volume = 0.05;
+
+  backgroundMusic
+    .play()
+    .catch((err) => console.error("Error playing background music:", err));
+
+  function stopMusic() {
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.volume = 0;
+  }
+
   socket = io();
 
   socket.on("startGame", (lobby: ILobby) => {
@@ -253,15 +268,21 @@ export function renderLobby(username: string, onLogout: () => void) {
     renderLobbyList(lobbies, username, onLogout);
   });
 
-  const createBtn = document.getElementById("create-lobby") as HTMLButtonElement;
+  const createBtn = document.getElementById(
+    "create-lobby"
+  ) as HTMLButtonElement;
   createBtn.addEventListener("click", () => {
+    stopMusic();
     socket.emit("createLobby", (lobby: ILobby) => {
       showLobbyView(lobby, username, onLogout);
     });
   });
 
-  const logoutBtn = document.getElementById("logout-button") as HTMLButtonElement;
+  const logoutBtn = document.getElementById(
+    "logout-button"
+  ) as HTMLButtonElement;
   logoutBtn.addEventListener("click", async () => {
+    stopMusic();
     try {
       const res = await fetch("/auth/logout", { method: "POST" });
       const data = await res.json();
@@ -281,16 +302,17 @@ export function renderLobby(username: string, onLogout: () => void) {
   });
 
   function renderLobbyList(
-      lobbies: Array<ILobby>,
-      userName: string,
-      onLogout: () => void
+    lobbies: Array<ILobby>,
+    userName: string,
+    onLogout: () => void
   ) {
     const container = document.getElementById("available-lobbies");
     if (!container) return;
     container.innerHTML = "";
 
     if (lobbies.length === 0) {
-      container.innerHTML = '<div class="no-lobbies">No games available. Create one!</div>';
+      container.innerHTML =
+        '<div class="no-lobbies">No games available. Create one!</div>';
       return;
     }
 
@@ -302,9 +324,15 @@ export function renderLobby(username: string, onLogout: () => void) {
         <div class="lobby-info">
           <strong>Game ${lobby.id}</strong><br>
           <span>Host: ${lobby.player1}</span>
-          ${lobby.player2 ? "<span> vs ${lobby.player2}</span>" : "<span>Waiting for opponent</span>"}
+          ${
+            lobby.player2
+              ? "<span> vs ${lobby.player2}</span>"
+              : "<span>Waiting for opponent</span>"
+          }
         </div>
-        <button class="pixel-button">${lobby.player2 ? "Spectate" : "Join"}</button>
+        <button class="pixel-button">${
+          lobby.player2 ? "Spectate" : "Join"
+        }</button>
       `;
 
       const joinBtn = lobbyDiv.querySelector("button") as HTMLButtonElement;
@@ -326,10 +354,14 @@ export function renderLobby(username: string, onLogout: () => void) {
     });
   }
 
-  function showLobbyView(lobby: ILobby, username: string, onLogout: () => void) {
+  function showLobbyView(
+    lobby: ILobby,
+    username: string,
+    onLogout: () => void
+  ) {
     const appDiv = document.getElementById("app") as HTMLDivElement;
 
-    let buttonsHtml = '';
+    let buttonsHtml = "";
     if (lobby.player2 !== null && lobby.player1 === username) {
       buttonsHtml = `<button id="start-game" class="pixel-button large">Start Game</button>`;
     }
@@ -366,28 +398,42 @@ export function renderLobby(username: string, onLogout: () => void) {
       ${lobbyStyles}
     `;
 
-    const startGameBtn = document.getElementById("start-game") as HTMLButtonElement;
+    const startGameBtn = document.getElementById(
+      "start-game"
+    ) as HTMLButtonElement;
     if (startGameBtn) {
+      stopMusic();
       startGameBtn.addEventListener("click", () => {
+        stopMusic();
         socket.emit("startGame", lobby.id);
+        stopMusic();
         renderGamePage(username);
+        stopMusic();
       });
     }
 
-    const leaveLobbyBtn = document.getElementById("leave-lobby") as HTMLButtonElement;
+    const leaveLobbyBtn = document.getElementById(
+      "leave-lobby"
+    ) as HTMLButtonElement;
     leaveLobbyBtn.addEventListener("click", () => {
+      stopMusic();
       socket.emit("leaveLobby", lobby.id, (success: boolean) => {
         if (success) {
+          stopMusic();
           socket.emit("getLobbyList");
           renderLobby(username, onLogout);
         } else {
+          stopMusic();
           alert("Could not leave lobby.");
         }
       });
     });
 
-    const logoutBtn = document.getElementById("logout-button") as HTMLButtonElement;
+    const logoutBtn = document.getElementById(
+      "logout-button"
+    ) as HTMLButtonElement;
     logoutBtn.addEventListener("click", async () => {
+      stopMusic();
       try {
         const res = await fetch("/auth/logout", { method: "POST" });
         const data = await res.json();

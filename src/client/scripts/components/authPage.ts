@@ -210,10 +210,10 @@ export function showAuthPopup(onSuccess: (user: User) => void) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const username = (
-        document.getElementById("login-username") as HTMLInputElement
+      document.getElementById("login-username") as HTMLInputElement
     ).value;
     const password = (
-        document.getElementById("login-password") as HTMLInputElement
+      document.getElementById("login-password") as HTMLInputElement
     ).value;
     try {
       const data = await login(username, password);
@@ -229,15 +229,15 @@ export function showAuthPopup(onSuccess: (user: User) => void) {
   });
 
   const registerForm = document.getElementById(
-      "register-form"
+    "register-form"
   ) as HTMLFormElement;
   registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const username = (
-        document.getElementById("reg-username") as HTMLInputElement
+      document.getElementById("reg-username") as HTMLInputElement
     ).value;
     const password = (
-        document.getElementById("reg-password") as HTMLInputElement
+      document.getElementById("reg-password") as HTMLInputElement
     ).value;
     try {
       const data = await register(username, password);

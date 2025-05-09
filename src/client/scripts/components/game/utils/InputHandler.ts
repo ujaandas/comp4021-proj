@@ -73,6 +73,7 @@ export class InputHandler {
     });
 
     this.bindKey("y", () => {
+      console.log("troll pressed");
       this.trollCallback?.();
     });
 
