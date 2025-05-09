@@ -158,12 +158,14 @@ io.on("connection", (socket) => {
   const user = socket.request.session.user;
 
   if (!user) {
+    console.log("Unauthorized connection attempt");
     return socket.disconnect(true);
   }
 
   // When a player enters the lobby
   socket.on("enter-lobby", () => {
     // Store socket with player info
+    console.log(`User ${user.username} connected`);
     onlinePlayers.set(user.username, {
       socketId: socket.id,
       inGame: false,
@@ -173,6 +175,7 @@ io.on("connection", (socket) => {
     });
 
     // Notify all players about the updated list
+    console.log("Online players:", onlinePlayers);
     broadcastOnlinePlayers();
   });
 
@@ -197,20 +200,28 @@ io.on("connection", (socket) => {
     const initiator = onlinePlayers.get(to);
     const acceptor = onlinePlayers.get(user.username);
 
+    console.log(`Game accepted by ${user.username} from ${to}`);
+    console.log("Initiator:", initiator.name);
+    console.log("Acceptor:", acceptor.name);
+
     if (initiator && acceptor && !initiator.inGame && !acceptor.inGame) {
       // Create game record
       const gameId = `${to}-${user.username}-${Date.now()}`;
+      console.log(`Game ID: ${gameId}`);
       activeGames.set(gameId, {
         players: [to, user.username],
         createdAt: Date.now(),
       });
+      console.log("Active games:", activeGames);
       // Store game ID with players
       onlinePlayers.get(user.username).gameId = gameId;
       onlinePlayers.get(to).gameId = gameId;
+      console.log(onlinePlayers);
 
       // Mark as in game
       onlinePlayers.get(user.username).inGame = true;
       onlinePlayers.get(to).inGame = true;
+      console.log("Updated online players:", onlinePlayers);
 
       // Notify players
       setTimeout(() => {
@@ -219,12 +230,14 @@ io.on("connection", (socket) => {
           opponent: user.username,
           isInitiator: true,
         });
+        console.log(`Game started for ${initiator.name} with ${user.username}`);
 
         io.to(acceptor.socketId).emit("game-start", {
           gameId,
           opponent: to,
           isInitiator: false,
         });
+        console.log(`Game started for ${acceptor.name} with ${to}`);
       }, 100);
 
       broadcastOnlinePlayers();
@@ -248,126 +261,72 @@ io.on("connection", (socket) => {
     }
   });
 
-  // When players leave the game
-  socket.on("leave-game", () => {
-    if (onlinePlayers.has(user.username)) {
-      onlinePlayers.get(user.username).inGame = false;
-      broadcastOnlinePlayers();
-    }
-  });
+  // // When players leave the game
+  // socket.on("leave-game", () => {
+  //   if (onlinePlayers.has(user.username)) {
+  //     onlinePlayers.get(user.username).inGame = false;
+  //     broadcastOnlinePlayers();
+  //   }
+  // });
 
-  socket.on("game-ended", (data) => {
-    const { gameId, playerScore, opponentScore } = data;
+  // socket.on("game-ended", (data) => {
+  //   const { gameId, playerScore, opponentScore } = data;
+  //   const game = activeGames.get(gameId);
+  //   if (!game) return;
+
+  //   const [player1, player2] = game.players;
+
+  //   // Update high scores
+  //   const users = JSON.parse(readFileSync(usersFilePath, "utf8"));
+  //   if (users[player1].highScore < playerScore)
+  //     users[player1].highScore = playerScore;
+  //   if (users[player2].highScore < opponentScore)
+  //     users[player2].highScore = opponentScore;
+  //   writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+
+  //   // Update sessions with last game data
+  //   const updateSession = (username, myScore, opponent, opponentScore) => {
+  //     const playerSocket = onlinePlayers.get(username)?.socketId;
+  //     if (playerSocket) {
+  //       const playerSession =
+  //         io.sockets.sockets.get(playerSocket).request.session;
+  //       playerSession.lastGame = { myScore, opponent, opponentScore };
+  //       playerSession.save();
+  //     }
+  //   };
+
+  //   updateSession(player1, playerScore, player2, opponentScore);
+  //   updateSession(player2, opponentScore, player1, playerScore);
+
+  //   // Clean up game
+  //   activeGames.delete(gameId);
+  //   onlinePlayers.get(player1).inGame = false;
+  //   onlinePlayers.get(player2).inGame = false;
+  //   broadcastOnlinePlayers();
+
+  //   // Redirect players to game-over
+  //   io.to(onlinePlayers.get(player1).socketId).emit(
+  //     "redirect",
+  //     "/js/game-over"
+  //   );
+  //   io.to(onlinePlayers.get(player2).socketId).emit(
+  //     "redirect",
+  //     "/js/game-over"
+  //   );
+  // });
+
+  socket.on("update-score", (data) => {
+    const { gameId, playerScore } = data;
     const game = activeGames.get(gameId);
     if (!game) return;
 
     const [player1, player2] = game.players;
 
-    // Update high scores
-    const users = JSON.parse(readFileSync(usersFilePath, "utf8"));
-    if (users[player1].highScore < playerScore)
-      users[player1].highScore = playerScore;
-    if (users[player2].highScore < opponentScore)
-      users[player2].highScore = opponentScore;
-    writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
-
-    // Update sessions with last game data
-    const updateSession = (username, myScore, opponent, opponentScore) => {
-      const playerSocket = onlinePlayers.get(username)?.socketId;
-      if (playerSocket) {
-        const playerSession =
-          io.sockets.sockets.get(playerSocket).request.session;
-        playerSession.lastGame = { myScore, opponent, opponentScore };
-        playerSession.save();
-      }
-    };
-
-    updateSession(player1, playerScore, player2, opponentScore);
-    updateSession(player2, opponentScore, player1, playerScore);
-
-    // Clean up game
-    activeGames.delete(gameId);
-    onlinePlayers.get(player1).inGame = false;
-    onlinePlayers.get(player2).inGame = false;
-    broadcastOnlinePlayers();
-
-    // Redirect players to game-over
-    io.to(onlinePlayers.get(player1).socketId).emit(
-      "redirect",
-      "/js/game-over"
-    );
     io.to(onlinePlayers.get(player2).socketId).emit(
-      "redirect",
-      "/js/game-over"
+      "update-score",
+      player2,
+      playerScore
     );
-  });
-
-  socket.on("getGameState", () => {
-    const playerData = onlinePlayers.get(user.username);
-    if (playerData && playerData.gameId && activeGames.has(playerData.gameId)) {
-      const game = activeGames.get(playerData.gameId);
-      console.log(
-        `Player ${user.username} is starting a game with state:`,
-        game.state
-      );
-      socket.emit("gameStart", { state: game.state });
-    }
-  });
-
-  socket.on("updateGameState", (data) => {
-    const playerData = onlinePlayers.get(user.username);
-    if (!playerData || !playerData.gameId) return;
-    const game = activeGames.get(playerData.gameId);
-    if (!game) return;
-
-    game.state = { ...game.state, ...data };
-
-    const opponentUsername = game.players.find((p) => p !== username);
-    if (opponentUsername) {
-      const opponent = onlinePlayers.get(opponentUsername);
-      if (opponent) {
-        console.log(
-          `Player ${user.username} updated game state for opponent ${opponentUsername}`
-        );
-        io.to(opponent.socketId).emit("opponentGameState", data);
-      }
-    }
-  });
-
-  socket.on("addLayers", (data) => {
-    const playerData = onlinePlayers.get(user.username);
-    if (!playerData || !playerData.gameId) return;
-    const game = activeGames.get(playerData.gameId);
-    if (!game) return;
-
-    const opponentUsername = game.players.find((p) => p !== username);
-    if (opponentUsername) {
-      const opponent = onlinePlayers.get(opponentUsername);
-      if (opponent) {
-        console.log(
-          `Player ${username} added layers for opponent ${opponentUsername}`
-        );
-        io.to(opponent.socketId).emit("addLayers", data);
-      }
-    }
-  });
-
-  socket.on("gameOver", (finalData = {}) => {
-    const playerData = onlinePlayers.get(username);
-    if (!playerData || !playerData.gameId) return;
-    const game = activeGames.get(playerData.gameId);
-    if (!game) return;
-
-    const opponentUsername = game.players.find((p) => p !== username);
-    if (opponentUsername) {
-      const opponent = onlinePlayers.get(opponentUsername);
-      if (opponent) {
-        console.log(
-          `Player ${username} ended the game, notifying opponent ${opponentUsername}`
-        );
-        io.to(opponent.socketId).emit("opponentGameOver", finalData);
-      }
-    }
   });
 
   // Handle disconnection

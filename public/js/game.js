@@ -5,7 +5,6 @@ import { Camera } from "../game/utils/Camera.js";
 import { Settings } from "../game/utils/Settings.js";
 import { GameTimer } from "../game/utils/GameTimer.js";
 import { TetrominoGenerator } from "../game/utils/TetGenerator.js";
-import { MultiplayerSocket } from "../game/socket/Socket.js";
 
 window.onload = function () {
   const localCanvas = document.getElementById("localCanvas");
@@ -22,66 +21,22 @@ window.onload = function () {
   opponentCanvas.width = window.innerWidth / 2;
   opponentCanvas.height = window.innerHeight;
 
-  const mpSocket = new MultiplayerSocket();
-
-  mpSocket.onGameStart((data) => {
-    console.log("Game started with ID:", data.gameId);
+  const username = localStorage.getItem("username");
+  const socket = io.connect("", {
+    auth: { username },
   });
 
-  mpSocket.onOpponentGameState((data) => {
-    console.log("Opponent game state received:", data);
-    opponentTileset.placedBlocks = data.placedBlocks;
-    opponentTileset.activeTet = data.activeTet;
-    updateOpponentTilesetCallback();
-  });
-
-  mpSocket.onAddLayers((data) => {
-    console.log("Received layers to add from opponent:", data.layers);
-    // localTileset.addLayers(data.layers);
-  });
-
-  mpSocket.onOpponentGameOver((data) => {
-    console.log("Opponent game over received:", data);
-    alert("Opponent lost the game! You win!");
-  });
-
-  const updateLocalTilesetCallback = () => {
-    localCtx.clearRect(0, 0, localCanvas.width, localCanvas.height);
-    console.log("Local Tileset updated");
-  };
-
-  const updateLocalScoreCallback = (score) => {
-    const scoreElement = document.getElementById("playerScore");
-    if (scoreElement) {
-      scoreElement.textContent = score.toString();
-    }
-    console.log("Local score updated:", score);
-  };
-
-  const sendLocalLayersCallback = (clearable) => {
-    console.log("Sending layers to server:", clearable);
-    mpSocket.sendLayers(clearable);
-  };
-
-  const gameoverLocalCallback = () => {
-    console.log("Local game over. Notifying server...");
-    mpSocket.gameover();
-  };
-
-  const updateOpponentTilesetCallback = () => {
-    opponentCtx.clearRect(0, 0, opponentCanvas.width, opponentCanvas.height);
-    console.log("Opponent Tileset updated");
-  };
+  socket.on("update-score", (data) => console.log(data));
 
   const noop = () => {};
 
   const localTileset = new Tileset(
     Settings.mapHeight,
     Settings.mapWidth,
-    updateLocalTilesetCallback,
-    updateLocalScoreCallback,
-    sendLocalLayersCallback,
-    gameoverLocalCallback
+    noop,
+    noop,
+    noop,
+    noop
   );
 
   const opponentTileset = new Tileset(
@@ -111,10 +66,6 @@ window.onload = function () {
   localTileset.initTetMode();
   localTileset.addTet(TetrominoGenerator.getRandomTetromino());
   localTileset.initTetMode();
-
-  setInterval(() => {
-    mpSocket.updateGameState(localTileset.placedBlocks, localTileset.activeTet);
-  }, 200);
 
   let lastTime = performance.now();
 
