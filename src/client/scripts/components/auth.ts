@@ -1,45 +1,33 @@
-type User = {
-  username: string;
-};
+type User = { username: string };
 
-let currentUser: User | null = null;
-
-const appDiv = document.getElementById("app") as HTMLDivElement;
-
-function renderContent(html: string): void {
-  appDiv.innerHTML = html;
+export async function login(
+  username: string,
+  password: string
+): Promise<{ success: boolean; user?: User; error?: string }> {
+  const res = await fetch("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  return await res.json();
 }
 
-function renderLandingPage(): void {
-  const landingHTML = `
-    <div class="landing-page">
-      <h1>t3dtris</h1>
-      <p>
-        Welcome to t3dtris, the ultimate 3D puzzle challenge!<br />
-        Follow the instructions and click Play to get started.
-      </p>
-      <button id="play-button">Play</button>
-    </div>
-  `;
-  renderContent(landingHTML);
-
-  const playBtn = document.getElementById("play-button") as HTMLButtonElement;
-  playBtn.addEventListener("click", onPlayClicked);
+export async function register(
+  username: string,
+  password: string
+): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch("/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  return await res.json();
 }
 
-function onPlayClicked(): void {
-  if (!currentUser) {
-    showAuthPopup();
-  } else {
-    renderLobby();
-  }
-}
-
-function showAuthPopup(): void {
+export function showAuthPopup(onSuccess: (user: User) => void) {
   const overlay = document.createElement("div");
   overlay.id = "auth-overlay";
   document.body.appendChild(overlay);
-
   const popup = document.createElement("div");
   popup.id = "auth-popup";
   popup.innerHTML = `
@@ -60,12 +48,10 @@ function showAuthPopup(): void {
     <p id="auth-message"></p>
   `;
   document.body.appendChild(popup);
-
   const closeBtn = document.getElementById("auth-close") as HTMLButtonElement;
   closeBtn.addEventListener("click", () => {
     removeAuthPopup();
   });
-
   const loginForm = document.getElementById("login-form") as HTMLFormElement;
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -76,26 +62,17 @@ function showAuthPopup(): void {
       document.getElementById("login-password") as HTMLInputElement
     ).value;
     try {
-      const res = await fetch("/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        currentUser = data.user;
-        showAuthMessage("Login successful!", false);
+      const data = await login(username, password);
+      if (data.success && data.user) {
         removeAuthPopup();
-        renderLobby();
+        onSuccess(data.user);
       } else {
         showAuthMessage("Login error: " + data.error, true);
       }
     } catch (error) {
       showAuthMessage("Error during login.", true);
-      console.error(error);
     }
   });
-
   const registerForm = document.getElementById(
     "register-form"
   ) as HTMLFormElement;
@@ -108,12 +85,7 @@ function showAuthPopup(): void {
       document.getElementById("reg-password") as HTMLInputElement
     ).value;
     try {
-      const res = await fetch("/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
+      const data = await register(username, password);
       if (data.success) {
         showAuthMessage("Registration successful! Please log in.", false);
       } else {
@@ -121,12 +93,11 @@ function showAuthPopup(): void {
       }
     } catch (error) {
       showAuthMessage("Error during registration.", true);
-      console.error(error);
     }
   });
 }
 
-function showAuthMessage(message: string, isError = false): void {
+function showAuthMessage(message: string, isError = false) {
   const msgEl = document.getElementById("auth-message") as HTMLParagraphElement;
   if (msgEl) {
     msgEl.textContent = message;
@@ -134,43 +105,9 @@ function showAuthMessage(message: string, isError = false): void {
   }
 }
 
-function removeAuthPopup(): void {
+function removeAuthPopup() {
   const popup = document.getElementById("auth-popup");
   const overlay = document.getElementById("auth-overlay");
   if (popup) popup.remove();
   if (overlay) overlay.remove();
 }
-
-function renderLobby(): void {
-  const lobbyHTML = `
-    <div class="lobby">
-      <h2>Welcome, ${currentUser?.username || ""}</h2>
-      <p>This is the lobby. Await further instructions or join a room!</p>
-      <button id="logout-button">Logout</button>
-    </div>
-  `;
-  renderContent(lobbyHTML);
-
-  const logoutBtn = document.getElementById(
-    "logout-button"
-  ) as HTMLButtonElement;
-  logoutBtn.addEventListener("click", async () => {
-    try {
-      const res = await fetch("/auth/logout", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        currentUser = null;
-        renderLandingPage();
-      } else {
-        alert("Logout failed.");
-      }
-    } catch (error) {
-      console.error("Error during logout", error);
-      alert("Error during logout.");
-    }
-  });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  renderLandingPage();
-});

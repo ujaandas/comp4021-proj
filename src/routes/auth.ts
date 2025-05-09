@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { loadUsers, saveUsers, IUser } from "../utils/users";
+import { loadUsers, saveUsers, IUser } from "../repository/users";
 import bcrypt from "bcrypt";
 
 export interface ICustomSession {

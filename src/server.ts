@@ -5,6 +5,7 @@ import path from "path";
 import routes from "./routes";
 import { sessionMiddleware } from "./middleware/session";
 import socketHandler from "./socket";
+import lobbyMatchHandler from "./socket/lobby";
 
 const PORT = process.env.PORT || 3000;
 
@@ -29,6 +30,7 @@ const io = new Server(httpServer, {
 });
 
 socketHandler(io);
+lobbyMatchHandler(io);
 
 io.engine.use(sessionMiddleware);
 
