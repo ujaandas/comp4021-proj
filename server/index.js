@@ -1,5 +1,4 @@
 const express = require("express");
-
 const bcrypt = require("bcrypt");
 const fs = require("fs");
 const session = require("express-session");
@@ -33,20 +32,14 @@ app.post("/register", (req, res) => {
   // Get the JSON data from the body
   const { username, avatar, name, password } = req.body;
 
-  //
-  // D. Reading the users.json file
-  //
+  // Reading the users.json file
   const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
 
-  //
-  // E. Checking for the user data correctness
-  //
-  // 1. Check if any field is empty
+  // Checking for the user data correctness
   if (!username || !avatar || !name || !password) {
     return res.json({ status: "error", error: "All fields are required" });
   }
 
-  // 2. Check username contains only word characters
   if (!containWordCharsOnly(username)) {
     return res.json({
       status: "error",
@@ -54,32 +47,22 @@ app.post("/register", (req, res) => {
     });
   }
 
-  // 3. Check if username already exists
   if (users[username]) {
     return res.json({ status: "error", error: "Username already exists" });
   }
 
-  //
-  // G. Adding the new user account
-  //
-  // Hash the password before storing
+  // Adding the new user account
   const hash = bcrypt.hashSync(password, 10);
-
-  // Create new user object
   users[username] = {
     avatar: avatar,
     name: name,
-    password: hash  // Store the hashed password, not the plain text
+    password: hash
   };
 
-  //
-  // H. Saving the users.json file
-  //
+  // Saving the users.json file
   fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 2));
 
-  //
-  // I. Sending a success response to the browser
-  //
+  // Sending a success response to the browser
   res.json({ status: "success" });
 });
 
@@ -88,14 +71,10 @@ app.post("/signin", (req, res) => {
   // Get the JSON data from the body
   const { username, password } = req.body;
 
-  //
-  // D. Reading the users.json file
-  //
+  // Reading the users.json file
   const users = JSON.parse(fs.readFileSync("./data/users.json", "utf8"));
 
-  //
-  // E. Checking for username/password
-  //
+  // Checking for username/password
   if (!users[username]) {
     return res.json({ status: "error", error: "Invalid username or password" });
   }
@@ -104,9 +83,7 @@ app.post("/signin", (req, res) => {
     return res.json({ status: "error", error: "Invalid username or password" });
   }
 
-  //
-  // G. Sending a success response with the user account
-  //
+  // Sending a success response with the user account
   const user = {
     username: username,
     avatar: users[username].avatar,
@@ -114,47 +91,24 @@ app.post("/signin", (req, res) => {
   };
 
   req.session.user = user;
-
-
   res.json({ status: "success", user: user });
-
 });
 
 // Handle the /validate endpoint
 app.get("/validate", (req, res) => {
-
-  //
-  // B. Getting req.session.user
-  //
   const user = req.session.user;
-
-  //
-  // D. Sending a success response with the user account
-  //
   if (user) {
     res.json({ status: "success", user: user });
   } else {
     res.json({ status: "error", error: "No user signed in" });
   }
-
 });
 
 // Handle the /signout endpoint
 app.get("/signout", (req, res) => {
-
-  //
-  // Deleting req.session.user
-  //
   delete req.session.user;
-
-  //
-  // Sending a success response
-  //
   res.json({ status: "success" });
 });
-
-
-// ***** Lab 6 Code - Socket.IO Implementation *****
 
 // Create HTTP server for Socket.IO
 const httpServer = require('http').createServer(app);
@@ -176,13 +130,14 @@ io.on('connection', (socket) => {
   // Add user to online list if authenticated
   if (user) {
     onlineUsers[user.username] = {
+      socketId: socket.id,
       avatar: user.avatar,
       name: user.name
     };
 
     // Broadcast new user to all clients
     io.emit('add user', JSON.stringify(user));
-    console.log(onlineUsers);
+    console.log("User connected:", user.username);
 
     // Handle get users request
     socket.on('get users', () => {
@@ -195,25 +150,75 @@ io.on('connection', (socket) => {
       socket.emit('messages', JSON.stringify(chatroom));
     });
 
-    // Handle new messages
-    socket.on('post message', (content) => {
-      const chatroom = JSON.parse(fs.readFileSync('./data/chatroom.json', 'utf8'));
 
-      const newMessage = {
-        user: {
-          username: user.username,
-          avatar: user.avatar,
-          name: user.name
-        },
-        datetime: new Date(),
-        content: content
-      };
+    // Handle game invitations
+    socket.on('game invite', (inviteData) => {
+      console.log('Game invite received:', inviteData);
 
-      chatroom.push(newMessage);
-      fs.writeFileSync('./data/chatroom.json', JSON.stringify(chatroom, null, 2));
+      // Verify data structure
+      if (!inviteData.to) {
+        console.error('Invalid invite format - missing "to" field');
+        return;
+      }
 
-      // Broadcast new message to all clients
-      io.emit('add message', JSON.stringify(newMessage));
+      const recipient = onlineUsers[inviteData.to];
+      if (!recipient) {
+        console.error('Recipient not found:', inviteData.to);
+        return;
+      }
+
+      console.log(`Routing invite from ${inviteData.from} to ${inviteData.to}`);
+
+      // Send to recipient's socket - no need to JSON.stringify here
+      io.to(recipient.socketId).emit('game invite', {
+        from: inviteData.from,
+        name: inviteData.name,
+        avatar: inviteData.avatar
+      });
+    });
+
+    // Handle game invitation responses
+    socket.on('game invite response', (data) => {
+      const response = JSON.parse(data);
+      console.log(`Game invite response from ${user.username} to ${response.to}: ${response.accepted}`);
+
+      // Find the original inviter's socket
+      const inviter = onlineUsers[response.to];
+      if (inviter) {
+        io.to(inviter.socketId).emit('game invite response', JSON.stringify({
+          from: user.username,
+          accepted: response.accepted,
+          name: user.name,
+          avatar: user.avatar
+        }));
+      }
+    });
+
+    // Handle game state updates (for multiplayer sync)
+    socket.on('game update', (data) => {
+      const gameData = JSON.parse(data);
+      const opponent = onlineUsers[gameData.to];
+
+      if (opponent) {
+        io.to(opponent.socketId).emit('game update', JSON.stringify({
+          from: user.username,
+          gameState: gameData.gameState,
+          score: gameData.score
+        }));
+      }
+    });
+
+    // Handle typing indicator
+    socket.on('typing', () => {
+      if (user) {
+        socket.broadcast.emit('user typing', JSON.stringify({
+          user: {
+            username: user.username,
+            avatar: user.avatar,
+            name: user.name
+          }
+        }));
+      }
     });
 
     // Handle disconnection
@@ -222,28 +227,13 @@ io.on('connection', (socket) => {
         delete onlineUsers[user.username];
         // Broadcast user removal to all clients
         io.emit('remove user', JSON.stringify(user));
-        console.log(onlineUsers);
-      }
-    });
-
-    // Handle typing indicator
-    socket.on('typing', () => {
-      if (user) {
-        // Ensure we're sending properly formatted data
-        const typingData = JSON.stringify({
-          user: {
-            username: user.username,
-            avatar: user.avatar,
-            name: user.name
-          }
-        });
-        socket.broadcast.emit('user typing', typingData);
+        console.log("User disconnected:", user.username);
       }
     });
   }
 });
 
-// Change app.listen to httpServer.listen
+// Start the server
 httpServer.listen(8000, () => {
-  console.log("The chat server has started...");
+  console.log("The game server has started on port 8000...");
 });

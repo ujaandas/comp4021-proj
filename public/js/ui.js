@@ -139,8 +139,15 @@ const UserPanel = (function() {
 
 const OnlineUsersPanel = (function() {
     // This function initializes the UI
-    const initialize = function() {};
+    const initialize = function() {
+        // Add click handler for game invitations
+        $("#online-users-area").on("click", ".invite-button", function() {
+            const username = $(this).data("username");
+            Socket.sendGameInvite(username);
+        });
+    };
 
+    // This function updates the online users panel
     // This function updates the online users panel
     const update = function(onlineUsers) {
         const onlineUsersArea = $("#online-users-area");
@@ -153,12 +160,20 @@ const OnlineUsersPanel = (function() {
 
         // Add the user one-by-one
         for (const username in onlineUsers) {
-            if (username != currentUser.username) {
-                onlineUsersArea.append(
-                    $("<div id='username-" + username + "'></div>")
-                        .append(UI.getUserDisplay(onlineUsers[username]))
-                );
+            if (username !== currentUser.username) {
+                const user = onlineUsers[username];
+
+                const userDiv = $("<div id='username-" + username + "' class='online-user'></div>")
+                    .append(UI.getUserDisplay(user))
+                    .append($("<button class='invite-button' data-username='" + username + "'>Invite to Game</button>"));
+
+                onlineUsersArea.append(userDiv);
             }
+        }
+
+        // Add a debug message if the area is empty
+        if (Object.keys(onlineUsers).length <= 1) {  // Only the current user
+            onlineUsersArea.append("<p class='info-message'>No other users online right now.</p>");
         }
     };
 
@@ -169,14 +184,17 @@ const OnlineUsersPanel = (function() {
         // Find the user
         const userDiv = onlineUsersArea.find("#username-" + user.username);
 
-        // Add the user
-        if (userDiv.length == 0) {
-            onlineUsersArea.append(
-                $("<div id='username-" + user.username + "'></div>")
-                    .append(UI.getUserDisplay(user))
-            );
+        // Add the user if not already present
+        if (userDiv.length === 0) {
+            const newUserDiv = $("<div id='username-" + user.username + "' class='online-user'></div>")
+                .append(UI.getUserDisplay(user))
+                .append($("<button class='invite-button' data-username='" + user.username + "'>Invite to Game</button>"));
+
+            onlineUsersArea.append(newUserDiv);
         }
     };
+
+// Add it to the return statement
 
     // This function removes a user from the panel
     const removeUser = function(user) {
@@ -212,5 +230,18 @@ const UI = (function() {
         }
     };
 
-    return { getUserDisplay, initialize };
+    // In UI.js, add this to the UI object
+    const showNotification = function(message, duration = 3000) {
+        const toast = document.getElementById('notification-toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        toast.classList.remove('hidden');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.classList.add('hidden');
+        }, duration);
+    };
+
+    return { getUserDisplay, initialize, showNotification };
 })();
